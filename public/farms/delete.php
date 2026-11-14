@@ -21,7 +21,7 @@ if ($id <= 0) {
     redirect('farms/index.php');
 }
 
-$result = (new Farm())->delete($id);
+$result = (new Farm(new Database()))->delete($id);
 if (!$result['ok']) {
     flash('danger', $result['error']);
 } elseif (!$result['deleted']) {
@@ -31,3 +31,12 @@ if (!$result['ok']) {
 }
 
 redirect('farms/index.php');
+
+
+
+
+
+
+
+
+

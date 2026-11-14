@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$plantingModel = new Planting();
+$plantingModel = new Planting(new Database());
 
 $id       = int_get('id', 0);
 $planting = $id > 0 ? $plantingModel->detail($id) : null;
@@ -178,3 +178,12 @@ require __DIR__ . '/../partials/header.php';
 <?php
 require __DIR__ . '/../partials/delete-modal.php';
 require __DIR__ . '/../partials/footer.php';
+
+
+
+
+
+
+
+
+

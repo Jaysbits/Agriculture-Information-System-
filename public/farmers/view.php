@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$farmerModel = new Farmer();
+$farmerModel = new Farmer(new Database());
 
 $id = int_get('id', 0);
 $farmer = $id > 0 ? $farmerModel->find($id) : null;
@@ -151,3 +151,12 @@ require __DIR__ . '/../partials/header.php';
 <?php
 require __DIR__ . '/../partials/delete-modal.php';
 require __DIR__ . '/../partials/footer.php';
+
+
+
+
+
+
+
+
+

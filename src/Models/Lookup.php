@@ -25,9 +25,9 @@ final class Lookup
 {
     private Database $db;
 
-    public function __construct(?Database $db = null)
+    public function __construct(Database $db)
     {
-        $this->db = $db ?? new Database();
+        $this->db = $db;
     }
 
     /**

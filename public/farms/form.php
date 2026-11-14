@@ -9,8 +9,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$farmModel   = new Farm();
-$farmerModel = new Farmer();
+$farmModel   = new Farm(new Database());
+$farmerModel = new Farmer(new Database());
 
 $id  = form_id();
 $prefillFarmer = int_get('farmer_id', 0);
@@ -143,3 +143,12 @@ require __DIR__ . '/../partials/header.php';
 </div>
 
 <?php require __DIR__ . '/../partials/footer.php'; ?>
+
+
+
+
+
+
+
+
+

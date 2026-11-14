@@ -13,10 +13,44 @@ declare(strict_types=1);
  * The generic all() / find() / create() / update() / delete() / count()
  * methods come from the shared Model base class.
  */
-final class Crop extends Model
+final class Crop
 {
-    protected string $table      = 'crop';
-    protected string $primaryKey = 'crop_id';
+    private Database $db;
+
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+    }
+
+    public function all(array $filters = [], array $options = []): array
+    {
+        return $this->db->select('crop', '*', $filters, $options);
+    }
+
+    public function find(int $id): ?array
+    {
+        return $this->db->find('crop', $id, 'crop_id');
+    }
+
+    public function create(array $data): array
+    {
+        return $this->db->insert('crop', $data);
+    }
+
+    public function update(int $id, array $data): array
+    {
+        return $this->db->update('crop', $data, ['crop_id=eq.' . $id]);
+    }
+
+    public function delete(int $id): array
+    {
+        return $this->db->delete('crop', ['crop_id=eq.' . $id]);
+    }
+
+    public function count(array $filters = []): int
+    {
+        return count($this->db->select('crop', 'crop_id', $filters));
+    }
 
     public const SORTABLE = ['name', 'category', 'season', 'period', 'plantings'];
 

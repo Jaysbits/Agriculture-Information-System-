@@ -42,9 +42,9 @@ $farm_id   = int_get('farm_id', 0);
 $status_id = int_get('status_id', 0);
 $grade_id  = int_get('grade_id', 0);
 
-$plantingModel = new Planting();
-$harvestModel  = new Harvest();
-$reportModel   = new Report();
+$plantingModel = new Planting(new Database());
+$harvestModel  = new Harvest(new Database());
+$reportModel   = new Report(new Database());
 
 $farms    = $plantingModel->farmFilterOptions();
 $statuses = $plantingModel->statuses();
@@ -403,3 +403,12 @@ require __DIR__ . '/partials/header.php';
 </div>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
+
+
+
+
+
+
+
+
+

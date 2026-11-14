@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$farmModel = new Farm();
+$farmModel = new Farm(new Database());
 
 $q             = get('q');
 $irrigation_id = int_get('irrigation_id', 0);
@@ -141,3 +141,12 @@ require __DIR__ . '/../partials/header.php';
 <?php
 require __DIR__ . '/../partials/delete-modal.php';
 require __DIR__ . '/../partials/footer.php';
+
+
+
+
+
+
+
+
+

@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$cropModel = new Crop();
+$cropModel = new Crop(new Database());
 
 $id   = int_get('id', 0);
 $crop = $id > 0 ? $cropModel->detail($id) : null;
@@ -137,3 +137,12 @@ require __DIR__ . '/../partials/header.php';
 <?php
 require __DIR__ . '/../partials/delete-modal.php';
 require __DIR__ . '/../partials/footer.php';
+
+
+
+
+
+
+
+
+

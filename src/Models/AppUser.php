@@ -13,10 +13,50 @@ declare(strict_types=1);
  * Generic all() / find() / create() / update() / delete() / count()
  * come from the shared Model base class.
  */
-final class AppUser extends Model
+final class AppUser
 {
-    protected string $table      = 'app_user';
-    protected string $primaryKey = 'user_id';
+    private Database $db;
+
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+    }
+
+    public function all(array $filters = [], array $options = []): array
+    {
+        return $this->db->select('app_user', '*', $filters, $options);
+    }
+
+    public function find(int $id): ?array
+    {
+        return $this->db->find('app_user', $id, 'user_id');
+    }
+
+    public function create(array $data): array
+    {
+        return $this->db->insert('app_user', $data);
+    }
+
+    public function update(int $id, array $data): array
+    {
+        return $this->db->update('app_user', $data, ['user_id=eq.' . $id]);
+    }
+
+    public function count(array $filters = []): int
+    {
+        return count($this->db->select('app_user', 'user_id', $filters));
+    }
+
+    protected function paginateQuery(string $countSql, string $rowsSql, array $params, int $page): array
+    {
+        $total = Database::count($countSql, $params);
+        $pager = paginate($total, $page);
+        $rows = Database::all($rowsSql, array_merge($params, [
+            ':limit'  => $pager['limit'],
+            ':offset' => $pager['offset'],
+        ]));
+        return ['rows' => $rows, 'pager' => $pager];
+    }
 
     public const SORTABLE = ['username', 'name', 'role', 'active', 'last_login'];
 
@@ -168,6 +208,6 @@ final class AppUser extends Model
             return ['ok' => false, 'deleted' => false, 'error' => 'The last active administrator account cannot be deleted.'];
         }
 
-        return parent::delete($id);
+        return $this->db->delete('app_user', ['user_id=eq.' . $id]);
     }
 }

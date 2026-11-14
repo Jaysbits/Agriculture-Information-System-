@@ -21,7 +21,7 @@ if ($id <= 0) {
     redirect('plantings/index.php');
 }
 
-$result = (new Planting())->delete($id);
+$result = (new Planting(new Database()))->delete($id);
 if (!$result['ok']) {
     flash('danger', $result['error']);
 } elseif (!$result['deleted']) {
@@ -31,3 +31,12 @@ if (!$result['ok']) {
 }
 
 redirect('plantings/index.php');
+
+
+
+
+
+
+
+
+

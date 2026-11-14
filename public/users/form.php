@@ -10,7 +10,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireAdmin();
 
-$userModel = new AppUser();
+$userModel = new AppUser(new Database());
 
 $id       = form_id();
 $existing = $id > 0 ? $userModel->find($id) : null;
@@ -135,3 +135,12 @@ require __DIR__ . '/../partials/header.php';
 </div>
 
 <?php require __DIR__ . '/../partials/footer.php'; ?>
+
+
+
+
+
+
+
+
+

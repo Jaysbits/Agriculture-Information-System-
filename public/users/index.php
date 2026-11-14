@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireAdmin();
 
-$userModel = new AppUser();
+$userModel = new AppUser(new Database());
 
 $q    = get('q');
 $role = get('role');
@@ -125,3 +125,12 @@ require __DIR__ . '/../partials/header.php';
 <?php
 require __DIR__ . '/../partials/delete-modal.php';
 require __DIR__ . '/../partials/footer.php';
+
+
+
+
+
+
+
+
+

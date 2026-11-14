@@ -12,10 +12,55 @@ declare(strict_types=1);
  *
  * Generic all() / find() / create() / update() / delete() come from Model.
  */
-final class Farm extends Model
+final class Farm
 {
-    protected string $table      = 'farm';
-    protected string $primaryKey = 'farm_id';
+    private Database $db;
+
+    public function __construct(Database $db)
+    {
+        $this->db = $db;
+    }
+
+    public function all(array $filters = [], array $options = []): array
+    {
+        return $this->db->select('farm', '*', $filters, $options);
+    }
+
+    public function find(int $id): ?array
+    {
+        return $this->db->find('farm', $id, 'farm_id');
+    }
+
+    public function create(array $data): array
+    {
+        return $this->db->insert('farm', $data);
+    }
+
+    public function update(int $id, array $data): array
+    {
+        return $this->db->update('farm', $data, ['farm_id=eq.' . $id]);
+    }
+
+    public function delete(int $id): array
+    {
+        return $this->db->delete('farm', ['farm_id=eq.' . $id]);
+    }
+
+    public function count(array $filters = []): int
+    {
+        return count($this->db->select('farm', 'farm_id', $filters));
+    }
+
+    protected function paginateQuery(string $countSql, string $rowsSql, array $params, int $page): array
+    {
+        $total = Database::count($countSql, $params);
+        $pager = paginate($total, $page);
+        $rows = Database::all($rowsSql, array_merge($params, [
+            ':limit'  => $pager['limit'],
+            ':offset' => $pager['offset'],
+        ]));
+        return ['rows' => $rows, 'pager' => $pager];
+    }
 
     public const SORTABLE = ['name', 'farmer', 'area', 'irrigation', 'plantings'];
 

@@ -9,8 +9,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$plantingModel = new Planting();
-$farmModel     = new Farm();
+$plantingModel = new Planting(new Database());
+$farmModel     = new Farm(new Database());
 
 $id       = form_id();
 $existing = $id > 0 ? $plantingModel->find($id) : null;
@@ -21,7 +21,7 @@ if ($id > 0 && !$existing) {
 }
 
 $farms    = $farmModel->options();
-$crops    = (new Crop())->options();
+$crops    = (new Crop(new Database()))->options();
 $statuses = $plantingModel->statuses();
 
 $data = $existing ?? [
@@ -141,3 +141,12 @@ require __DIR__ . '/../partials/header.php';
 </div>
 
 <?php require __DIR__ . '/../partials/footer.php'; ?>
+
+
+
+
+
+
+
+
+

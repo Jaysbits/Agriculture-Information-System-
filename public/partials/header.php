@@ -124,3 +124,12 @@ if (Auth::isAdmin()) {
         <?php if ($pageActions !== ''): ?>
             <div class="d-flex d-md-none gap-2 mb-3 flex-wrap"><?= $pageActions ?></div>
         <?php endif; ?>
+
+
+
+
+
+
+
+
+

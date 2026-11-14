@@ -21,7 +21,7 @@ if ($id <= 0) {
     redirect('harvests/index.php');
 }
 
-$result = (new Harvest())->delete($id);
+$result = (new Harvest(new Database()))->delete($id);
 if (!$result['ok']) {
     flash('danger', $result['error']);
 } elseif (!$result['deleted']) {
@@ -31,3 +31,12 @@ if (!$result['ok']) {
 }
 
 redirect('harvests/index.php');
+
+
+
+
+
+
+
+
+

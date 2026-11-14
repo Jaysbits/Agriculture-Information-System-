@@ -11,7 +11,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config/config.php';
 Auth::requireAdmin();
 
-$lookup = new Lookup();
+$lookup = new Lookup(new Database());
 
 $lookups = $lookup->tables();
 
@@ -169,3 +169,12 @@ require __DIR__ . '/partials/header.php';
 <?php
 require __DIR__ . '/partials/delete-modal.php';
 require __DIR__ . '/partials/footer.php';
+
+
+
+
+
+
+
+
+

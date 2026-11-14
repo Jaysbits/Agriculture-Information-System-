@@ -9,8 +9,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$harvestModel  = new Harvest();
-$plantingModel = new Planting();
+$harvestModel  = new Harvest(new Database());
+$plantingModel = new Planting(new Database());
 
 $id       = form_id();
 $existing = $id > 0 ? $harvestModel->find($id) : null;
@@ -151,3 +151,12 @@ require __DIR__ . '/../partials/header.php';
 </div>
 
 <?php require __DIR__ . '/../partials/footer.php'; ?>
+
+
+
+
+
+
+
+
+

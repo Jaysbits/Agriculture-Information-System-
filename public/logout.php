@@ -12,3 +12,12 @@ if (is_post() && Auth::check()) {
 }
 
 redirect(Auth::check() ? 'index.php' : 'login.php');
+
+
+
+
+
+
+
+
+

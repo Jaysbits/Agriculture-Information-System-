@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
-$harvestModel = new Harvest();
+$harvestModel = new Harvest(new Database());
 
 $id      = int_get('id', 0);
 $harvest = $id > 0 ? $harvestModel->detail($id) : null;
@@ -151,3 +151,12 @@ require __DIR__ . '/../partials/header.php';
 <?php
 require __DIR__ . '/../partials/delete-modal.php';
 require __DIR__ . '/../partials/footer.php';
+
+
+
+
+
+
+
+
+

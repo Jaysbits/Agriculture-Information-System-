@@ -76,7 +76,6 @@ require_once APP_ROOT . '/src/Validator.php';
  * Model layer. Each entity's database logic lives in its own file under
  * src/Models/. The public/ pages are the views and only call these.
  */
-require_once APP_ROOT . '/src/Models/Model.php';
 require_once APP_ROOT . '/src/Models/Farmer.php';
 require_once APP_ROOT . '/src/Models/Farm.php';
 require_once APP_ROOT . '/src/Models/Crop.php';

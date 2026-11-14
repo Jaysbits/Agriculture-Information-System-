@@ -10,7 +10,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config/config.php';
 Auth::requireLogin();
 
-$dashboard = new Dashboard();
+$dashboard = new Dashboard(new Database());
 
 /* ---- summary numbers (all queried live) ---------------------------- */
 $summary = $dashboard->summary();
@@ -322,3 +322,12 @@ $pageScripts = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/ch
 </script>';
 
 require __DIR__ . '/partials/footer.php';
+
+
+
+
+
+
+
+
+

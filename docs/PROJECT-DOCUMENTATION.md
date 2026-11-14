@@ -47,9 +47,6 @@ AgriSys solves this with a normalized relational database, controlled dropdown
 values stored in lookup tables, server-side validation, role-based access and a
 dashboard/report layer that answers those questions from live data.
 
-The system follows the **three-schema-style separation** used in the course:
-conceptual design (ERD and normalization), logical design (tables, keys,
-constraints) and physical design (PostgreSQL DDL, indexes, triggers, views).
 
 ---
 

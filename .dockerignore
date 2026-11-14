@@ -1,0 +1,9 @@
+.git
+.env
+storage/logs
+node_modules
+vendor
+tests
+docs
+README.md
+schema.sql

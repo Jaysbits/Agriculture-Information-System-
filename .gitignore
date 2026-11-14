@@ -1,0 +1,36 @@
+# =====================================================================
+# AgriSys — files kept out of the repository
+# =====================================================================
+
+# --- Secrets / local environment ------------------------------------
+# Keep the template, never the real values.
+.env
+.env.*
+!.env.example
+
+# --- Runtime logs (keep the folder, drop its contents) --------------
+storage/logs/*
+!storage/logs/.gitkeep
+
+# --- Superseded draft files (kept on disk, never committed) ---------
+# database/01_schema.sql is the canonical schema.
+/schema.sql
+
+# --- Temporary / backup files ---------------------------------------
+*.log
+*.tmp
+*.bak
+*.orig
+*~
+
+# --- OS / editor noise ----------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Dependencies (none by default, kept for future use) ------------
+/vendor/
+/node_modules/

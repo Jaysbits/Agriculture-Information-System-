@@ -1,0 +1,22 @@
+# Apache configuration for the public document root.
+# (When using `php -S localhost:8000 -t public` these rules are not needed.)
+
+Options -Indexes
+
+DirectoryIndex index.php
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Block direct access to any dotfile that may end up in the web root.
+    RewriteRule (^|/)\. - [F]
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

@@ -10,8 +10,10 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireAdmin();
 
+$userModel = new AppUser();
+
 $id       = form_id();
-$existing = $id > 0 ? AppUser::find($id) : null;
+$existing = $id > 0 ? $userModel->find($id) : null;
 
 if ($id > 0 && !$existing) {
     flash('danger', 'That user account no longer exists.');
@@ -29,7 +31,7 @@ $errors = [];
 if (is_post()) {
     verify_csrf();
 
-    $result = AppUser::save($_POST, $id, Auth::id());
+    $result = $userModel->save($_POST, $id, Auth::id());
     if ($result['ok']) {
         flash('success', $existing ? 'User account updated successfully.' : 'User account created successfully.');
         redirect('users/index.php');

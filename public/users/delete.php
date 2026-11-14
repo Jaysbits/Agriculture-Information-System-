@@ -21,7 +21,7 @@ if ($id <= 0) {
     redirect('users/index.php');
 }
 
-$result = AppUser::delete($id, Auth::id());
+$result = (new AppUser())->delete($id, Auth::id());
 if (!$result['ok']) {
     flash('danger', $result['error']);
 } elseif (!$result['deleted']) {

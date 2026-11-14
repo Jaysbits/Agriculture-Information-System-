@@ -9,17 +9,20 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$plantingModel = new Planting();
+$farmModel     = new Farm();
+
 $id       = form_id();
-$existing = $id > 0 ? Planting::find($id) : null;
+$existing = $id > 0 ? $plantingModel->find($id) : null;
 
 if ($id > 0 && !$existing) {
     flash('danger', 'That planting record no longer exists.');
     redirect('plantings/index.php');
 }
 
-$farms    = Farm::options();
-$crops    = Crop::options();
-$statuses = Planting::statuses();
+$farms    = $farmModel->options();
+$crops    = (new Crop())->options();
+$statuses = $plantingModel->statuses();
 
 $data = $existing ?? [
     'farm_id'               => int_get('farm_id', 0) ?: '',
@@ -35,7 +38,7 @@ $errors = [];
 if (is_post()) {
     verify_csrf();
 
-    $result = Planting::save($_POST, $id);
+    $result = $plantingModel->save($_POST, $id);
     if ($result['ok']) {
         flash('success', $existing ? 'Planting record updated successfully.' : 'Planting record added successfully.');
         redirect('plantings/view.php?id=' . $result['id']);

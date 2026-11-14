@@ -21,7 +21,7 @@ if ($id <= 0) {
     redirect('crops/index.php');
 }
 
-$result = Crop::delete($id);
+$result = (new Crop())->delete($id);
 if (!$result['ok']) {
     flash('danger', $result['error']);
 } elseif (!$result['deleted']) {

@@ -10,12 +10,14 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config/config.php';
 Auth::requireLogin();
 
+$dashboard = new Dashboard();
+
 /* ---- summary numbers (all queried live) ---------------------------- */
-$summary = Dashboard::summary();
+$summary = $dashboard->summary();
 
-$statusRows = Dashboard::statusBreakdown();
+$statusRows = $dashboard->statusBreakdown();
 
-$monthly = Dashboard::monthlyHarvest();
+$monthly = $dashboard->monthlyHarvest();
 
 $monthLabels = [];
 $monthQty    = [];
@@ -34,10 +36,10 @@ for ($i = 5; $i >= 0; $i--) {
     $monthValue[] = $match ? round((float) $match['value'], 2) : 0;
 }
 
-$recentPlantings = Dashboard::recentPlantings();
-$recentHarvests  = Dashboard::recentHarvests();
-$upcoming        = Dashboard::upcomingHarvests();
-$topCrops        = Dashboard::topCrops();
+$recentPlantings = $dashboard->recentPlantings();
+$recentHarvests  = $dashboard->recentHarvests();
+$upcoming        = $dashboard->upcomingHarvests();
+$topCrops        = $dashboard->topCrops();
 
 $avgPrice = (float) ($summary['total_qty'] ?? 0) > 0
     ? (float) $summary['total_value'] / (float) $summary['total_qty']

@@ -9,18 +9,21 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$farmModel   = new Farm();
+$farmerModel = new Farmer();
+
 $id  = form_id();
 $prefillFarmer = int_get('farmer_id', 0);
 
-$existing = $id > 0 ? Farm::find($id) : null;
+$existing = $id > 0 ? $farmModel->find($id) : null;
 if ($id > 0 && !$existing) {
     flash('danger', 'That farm record no longer exists.');
     redirect('farms/index.php');
 }
 
-$farmers         = Farmer::options();
-$soilTypes       = Farm::soilTypes();
-$irrigationTypes = Farm::irrigationTypes();
+$farmers         = $farmerModel->options();
+$soilTypes       = $farmModel->soilTypes();
+$irrigationTypes = $farmModel->irrigationTypes();
 
 $data = $existing ?? [
     'farmer_id'     => $prefillFarmer ?: '',
@@ -32,12 +35,12 @@ $data = $existing ?? [
 ];
 $errors = [];
 
-$plantedArea = $existing ? Farm::plantedArea($id) : 0.0;
+$plantedArea = $existing ? $farmModel->plantedArea($id) : 0.0;
 
 if (is_post()) {
     verify_csrf();
 
-    $result = Farm::save($_POST, $id);
+    $result = $farmModel->save($_POST, $id);
     if ($result['ok']) {
         flash('success', $existing ? 'Farm updated successfully.' : 'Farm registered successfully.');
         redirect('farms/view.php?id=' . $result['id']);

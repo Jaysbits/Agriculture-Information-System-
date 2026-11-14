@@ -252,12 +252,12 @@ message; delete endpoints also verify the role server-side.
 ├── config/
 │   └── config.php            Env loading, error handling, session, constants
 ├── src/                      Application classes (outside the web root)
-│   ├── Database.php          PDO singleton + query helpers
+│   ├── Database.php          PDO singleton, raw SQL helpers + generic table API
 │   ├── Auth.php              Login, logout, throttling, role checks
 │   ├── Validator.php         Server-side validation rules
 │   ├── helpers.php           e(), url(), flash, CSRF, pagination, formatting
 │   └── Models/               MODEL layer — one file per entity (all SQL lives here)
-│       ├── Model.php         Base model (pagination, ordering, delete)
+│       ├── Model.php         Base model (generic CRUD, pagination, ordering)
 │       ├── Farmer.php        Farmer CRUD + queries
 │       ├── Farm.php          Farm CRUD + dropdown options
 │       ├── Crop.php          Crop CRUD + categories/seasons/options
@@ -301,6 +301,24 @@ Every module follows the same four-page pattern:
 Database logic never lives in a page. Each entity has a **model** in
 `src/Models/` that owns every query for that entity, and the pages in `public/`
 are **views/controllers** that validate input, call the model and render HTML.
+
+Models are used as **objects**. `Model.php` is an abstract base class that
+provides generic CRUD — `all()`, `find()`, `create()`, `update()`, `delete()`
+and `count()` — backed by the table-oriented API on `Database` (`select`,
+`find`, `insert`, `update`, `delete`). Entity models extend it:
+
+```php
+$farmer = new Farmer();
+$farmer->all(['address=ilike.%Cebu%'], ['order' => 'last_name']);
+$farmer->find(3);
+$farmer->create($data);
+$farmer->update(3, $data);
+$farmer->delete(3);
+```
+
+The filter strings use the same PostgREST-style syntax as Supabase:
+`column=eq.value`, `column=ilike.%x%`, `column=in.(1,2,3)`, `column=is.null`
+and `or=(a.ilike.%x%,b.ilike.%x%)`.
 
 - A model exposes `find()`, `save()`, `delete()` and its own list/lookup helpers.
 - `save()` returns `['ok' => bool, 'id' => ?int, 'errors' => [], 'dbError' => ?string]`.

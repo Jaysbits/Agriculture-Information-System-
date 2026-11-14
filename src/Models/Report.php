@@ -9,10 +9,22 @@ declare(strict_types=1);
  * optional date range and filters. The page decides how to present the
  * rows (summary cards, tables, CSV, print); this class only fetches
  * them.
+ *
+ * Used as an object:
+ *
+ *     $report = new Report();
+ *     $report->farmers($from, $to);
  */
 final class Report
 {
-    public static function farmers(string $from, string $to): array
+    private Database $db;
+
+    public function __construct(?Database $db = null)
+    {
+        $this->db = $db ?? new Database();
+    }
+
+    public function farmers(string $from, string $to): array
     {
         return Database::all(
             "SELECT fa.farmer_id,
@@ -33,7 +45,7 @@ final class Report
         );
     }
 
-    public static function farmCrops(string $from, string $to, int $farmId = 0): array
+    public function farmCrops(string $from, string $to, int $farmId = 0): array
     {
         $where  = ['p.planting_date BETWEEN :from AND :to'];
         $params = [':from' => $from, ':to' => $to];
@@ -62,9 +74,9 @@ final class Report
     }
 
     /** Summary rows: plantings grouped by status. */
-    public static function plantingStatusGrouped(string $from, string $to, int $statusId = 0): array
+    public function plantingStatusGrouped(string $from, string $to, int $statusId = 0): array
     {
-        [$whereSql, $params] = self::plantingStatusFilter($from, $to, $statusId);
+        [$whereSql, $params] = $this->plantingStatusFilter($from, $to, $statusId);
 
         return Database::all(
             "SELECT v.status_name, COUNT(*) AS plantings, SUM(v.area_planted) AS area,
@@ -78,9 +90,9 @@ final class Report
     }
 
     /** Detail rows: individual planting records. */
-    public static function plantingStatusRows(string $from, string $to, int $statusId = 0): array
+    public function plantingStatusRows(string $from, string $to, int $statusId = 0): array
     {
-        [$whereSql, $params] = self::plantingStatusFilter($from, $to, $statusId);
+        [$whereSql, $params] = $this->plantingStatusFilter($from, $to, $statusId);
 
         return Database::all(
             "SELECT v.planting_id, v.planting_date, v.farm_name, v.farmer_name, v.crop_name,
@@ -92,7 +104,7 @@ final class Report
         );
     }
 
-    public static function harvests(string $from, string $to, int $gradeId = 0, int $farmId = 0): array
+    public function harvests(string $from, string $to, int $gradeId = 0, int $farmId = 0): array
     {
         $where  = ['v.harvest_date BETWEEN :from AND :to'];
         $params = [':from' => $from, ':to' => $to];
@@ -116,9 +128,9 @@ final class Report
         );
     }
 
-    public static function harvestTotalsByCrop(string $from, string $to, int $farmId = 0): array
+    public function harvestTotalsByCrop(string $from, string $to, int $farmId = 0): array
     {
-        [$whereSql, $params] = self::harvestFilter($from, $to, $farmId);
+        [$whereSql, $params] = $this->harvestFilter($from, $to, $farmId);
 
         return Database::all(
             "SELECT v.crop_name, COUNT(*) AS records, SUM(v.quantity_kg) AS qty
@@ -130,9 +142,9 @@ final class Report
         );
     }
 
-    public static function harvestTotalsByFarm(string $from, string $to, int $farmId = 0): array
+    public function harvestTotalsByFarm(string $from, string $to, int $farmId = 0): array
     {
-        [$whereSql, $params] = self::harvestFilter($from, $to, $farmId);
+        [$whereSql, $params] = $this->harvestFilter($from, $to, $farmId);
 
         return Database::all(
             "SELECT v.farm_name, v.farmer_name, COUNT(*) AS records, SUM(v.quantity_kg) AS qty
@@ -144,9 +156,9 @@ final class Report
         );
     }
 
-    public static function harvestValueByCrop(string $from, string $to, int $farmId = 0): array
+    public function harvestValueByCrop(string $from, string $to, int $farmId = 0): array
     {
-        [$whereSql, $params] = self::harvestFilter($from, $to, $farmId);
+        [$whereSql, $params] = $this->harvestFilter($from, $to, $farmId);
 
         return Database::all(
             "SELECT v.crop_name, SUM(v.quantity_kg) AS qty,
@@ -162,9 +174,9 @@ final class Report
         );
     }
 
-    public static function harvestValueByFarm(string $from, string $to, int $farmId = 0): array
+    public function harvestValueByFarm(string $from, string $to, int $farmId = 0): array
     {
-        [$whereSql, $params] = self::harvestFilter($from, $to, $farmId);
+        [$whereSql, $params] = $this->harvestFilter($from, $to, $farmId);
 
         return Database::all(
             "SELECT v.farm_name, v.farmer_name, SUM(v.quantity_kg) AS qty,
@@ -180,7 +192,7 @@ final class Report
     /**
      * @return array{0:string,1:array<string,mixed>}
      */
-    private static function plantingStatusFilter(string $from, string $to, int $statusId): array
+    private function plantingStatusFilter(string $from, string $to, int $statusId): array
     {
         $where  = ['v.planting_date BETWEEN :from AND :to'];
         $params = [':from' => $from, ':to' => $to];
@@ -194,7 +206,7 @@ final class Report
     /**
      * @return array{0:string,1:array<string,mixed>}
      */
-    private static function harvestFilter(string $from, string $to, int $farmId): array
+    private function harvestFilter(string $from, string $to, int $farmId): array
     {
         $where  = ['v.harvest_date BETWEEN :from AND :to'];
         $params = [':from' => $from, ':to' => $to];

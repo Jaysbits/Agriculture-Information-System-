@@ -9,17 +9,19 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$farmModel = new Farm();
+
 $id = int_get('id', 0);
 
-$farm = $id > 0 ? Farm::detail($id) : null;
+$farm = $id > 0 ? $farmModel->detail($id) : null;
 
 if (!$farm) {
     flash('danger', 'That farm record could not be found.');
     redirect('farms/index.php');
 }
 
-$plantings = Farm::plantings($id);
-$stats     = Farm::stats($id);
+$plantings = $farmModel->plantings($id);
+$stats     = $farmModel->stats($id);
 
 $pageTitle    = 'Farm details';
 $active       = 'farms';

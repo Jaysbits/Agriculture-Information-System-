@@ -9,16 +9,18 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$plantingModel = new Planting();
+
 $id       = int_get('id', 0);
-$planting = $id > 0 ? Planting::detail($id) : null;
+$planting = $id > 0 ? $plantingModel->detail($id) : null;
 
 if (!$planting) {
     flash('danger', 'That planting record could not be found.');
     redirect('plantings/index.php');
 }
 
-$harvests = Planting::harvests($id);
-$totals   = Planting::harvestTotals($id);
+$harvests = $plantingModel->harvests($id);
+$totals   = $plantingModel->harvestTotals($id);
 
 $daysSince  = (int) floor((time() - strtotime((string) $planting['planting_date'])) / 86400);
 $daysToGo   = $planting['expected_harvest_date']

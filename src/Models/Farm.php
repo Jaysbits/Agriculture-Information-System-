@@ -9,21 +9,18 @@ declare(strict_types=1);
  * lookup by id (with farmer, soil and irrigation joined), dropdown
  * option lists, the reads used by the detail page, validation and
  * create / update / delete. HTML lives in public/farms/*.php.
+ *
+ * Generic all() / find() / create() / update() / delete() come from Model.
  */
 final class Farm extends Model
 {
-    protected static string $table      = 'farm';
-    protected static string $primaryKey = 'farm_id';
+    protected string $table      = 'farm';
+    protected string $primaryKey = 'farm_id';
 
     public const SORTABLE = ['name', 'farmer', 'area', 'irrigation', 'plantings'];
 
-    public static function find(int $id): ?array
-    {
-        return Database::one('SELECT * FROM farm WHERE farm_id = :id', [':id' => $id]);
-    }
-
     /** Farm detail row with related descriptions (detail page hero). */
-    public static function detail(int $id): ?array
+    public function detail(int $id): ?array
     {
         return Database::one(
             'SELECT fm.*, fa.first_name, fa.last_name, fa.contact_number, fa.farmer_id,
@@ -38,7 +35,7 @@ final class Farm extends Model
     }
 
     /** Farm option list (with owning farmer) for dropdowns. */
-    public static function options(): array
+    public function options(): array
     {
         return Database::all(
             'SELECT fm.farm_id, fm.farm_name, fm.area_hectares, fa.last_name, fa.first_name
@@ -47,18 +44,18 @@ final class Farm extends Model
         );
     }
 
-    public static function soilTypes(): array
+    public function soilTypes(): array
     {
-        return Database::all('SELECT * FROM soil_type ORDER BY soil_type_name');
+        return $this->db->select('soil_type', '*', [], ['order' => 'soil_type_name']);
     }
 
-    public static function irrigationTypes(): array
+    public function irrigationTypes(): array
     {
-        return Database::all('SELECT * FROM irrigation_type ORDER BY irrigation_name');
+        return $this->db->select('irrigation_type', '*', [], ['order' => 'irrigation_name']);
     }
 
     /** Total planted area on a farm (used by the edit form warning). */
-    public static function plantedArea(int $farmId): float
+    public function plantedArea(int $farmId): float
     {
         return (float) Database::value(
             'SELECT COALESCE(SUM(area_planted), 0) FROM planting WHERE farm_id = :id',
@@ -72,7 +69,7 @@ final class Farm extends Model
      *
      * @return array{rows: array<int,array<string,mixed>>, pager: array<string,mixed>}
      */
-    public static function listing(string $q, int $irrigationId, int $soilTypeId, string $sort, string $dir, int $page): array
+    public function listing(string $q, int $irrigationId, int $soilTypeId, string $sort, string $dir, int $page): array
     {
         $where  = [];
         $params = [];
@@ -102,7 +99,7 @@ final class Farm extends Model
         ];
         $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', fm.farm_id DESC';
 
-        return self::paginateQuery(
+        return $this->paginateQuery(
             "SELECT COUNT(*) FROM farm fm JOIN farmer fa ON fa.farmer_id = fm.farmer_id {$whereSql}",
             "SELECT fm.farm_id, fm.farm_name, fm.location, fm.area_hectares,
                     fa.farmer_id, fa.first_name, fa.last_name,
@@ -124,7 +121,7 @@ final class Farm extends Model
     }
 
     /** Planting records on a farm (detail page table). */
-    public static function plantings(int $farmId): array
+    public function plantings(int $farmId): array
     {
         return Database::all(
             'SELECT * FROM v_planting_detail WHERE farm_id = :id ORDER BY planting_date DESC, planting_id DESC',
@@ -133,7 +130,7 @@ final class Farm extends Model
     }
 
     /** Aggregated statistics for one farm (detail page). */
-    public static function stats(int $farmId): array
+    public function stats(int $farmId): array
     {
         return Database::one(
             'SELECT COUNT(*) AS plantings,
@@ -154,7 +151,7 @@ final class Farm extends Model
      *
      * @return array{ok:bool, id:?int, errors: array<string,string>, dbError:?string}
      */
-    public static function save(array $input, int $id = 0): array
+    public function save(array $input, int $id = 0): array
     {
         $v = new Validator($input);
         $v->exists('farmer_id', 'farmer', 'farmer_id', 'Farmer')
@@ -192,24 +189,12 @@ final class Farm extends Model
 
         try {
             if ($id > 0) {
-                Database::run(
-                    'UPDATE farm
-                        SET farmer_id = :farmer_id, soil_type_id = :soil_type_id, irrigation_id = :irrigation_id,
-                            farm_name = :farm_name, location = :location, area_hectares = :area_hectares
-                      WHERE farm_id = :id',
-                    $clean + [':id' => $id]
-                );
+                $this->update($id, $clean);
                 return ['ok' => true, 'id' => $id, 'errors' => [], 'dbError' => null];
             }
 
-            $newId = (int) Database::run(
-                'INSERT INTO farm (farmer_id, soil_type_id, irrigation_id, farm_name, location, area_hectares)
-                 VALUES (:farmer_id, :soil_type_id, :irrigation_id, :farm_name, :location, :area_hectares)
-                 RETURNING farm_id',
-                $clean
-            )->fetchColumn();
-
-            return ['ok' => true, 'id' => $newId, 'errors' => [], 'dbError' => null];
+            $row = $this->create($clean);
+            return ['ok' => true, 'id' => (int) ($row['farm_id'] ?? 0), 'errors' => [], 'dbError' => null];
         } catch (PDOException $e) {
             error_log('[farm save] ' . $e->getMessage());
             return ['ok' => false, 'id' => null, 'errors' => [], 'dbError' => friendly_db_error($e)];

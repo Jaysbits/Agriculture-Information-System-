@@ -42,9 +42,13 @@ $farm_id   = int_get('farm_id', 0);
 $status_id = int_get('status_id', 0);
 $grade_id  = int_get('grade_id', 0);
 
-$farms    = Planting::farmFilterOptions();
-$statuses = Planting::statuses();
-$grades   = Harvest::grades();
+$plantingModel = new Planting();
+$harvestModel  = new Harvest();
+$reportModel   = new Report();
+
+$farms    = $plantingModel->farmFilterOptions();
+$statuses = $plantingModel->statuses();
+$grades   = $harvestModel->grades();
 
 /* --------------------------------------------------------------------
  * Build the report: summary cards + one or more tables.
@@ -54,7 +58,7 @@ $tables  = [];
 
 switch ($report) {
     case 'farmers':
-        $rows = Report::farmers($from, $to);
+        $rows = $reportModel->farmers($from, $to);
 
         $summary = [
             ['label' => 'Farmers in range', 'value' => number_format(count($rows))],
@@ -73,7 +77,7 @@ switch ($report) {
         break;
 
     case 'farm_crops':
-        $rows = Report::farmCrops($from, $to, $farm_id);
+        $rows = $reportModel->farmCrops($from, $to, $farm_id);
 
         $summary = [
             ['label' => 'Farm / crop combinations', 'value' => number_format(count($rows))],
@@ -91,8 +95,8 @@ switch ($report) {
         break;
 
     case 'planting_status':
-        $grouped = Report::plantingStatusGrouped($from, $to, $status_id);
-        $rows    = Report::plantingStatusRows($from, $to, $status_id);
+        $grouped = $reportModel->plantingStatusGrouped($from, $to, $status_id);
+        $rows    = $reportModel->plantingStatusRows($from, $to, $status_id);
 
         $summary = [
             ['label' => 'Planting records', 'value' => number_format(count($rows))],
@@ -120,7 +124,7 @@ switch ($report) {
         break;
 
     case 'harvests':
-        $rows = Report::harvests($from, $to, $grade_id, $farm_id);
+        $rows = $reportModel->harvests($from, $to, $grade_id, $farm_id);
 
         $summary = [
             ['label' => 'Harvest records', 'value' => number_format(count($rows))],
@@ -146,8 +150,8 @@ switch ($report) {
         break;
 
     case 'harvest_totals':
-        $byCrop = Report::harvestTotalsByCrop($from, $to, $farm_id);
-        $byFarm = Report::harvestTotalsByFarm($from, $to, $farm_id);
+        $byCrop = $reportModel->harvestTotalsByCrop($from, $to, $farm_id);
+        $byFarm = $reportModel->harvestTotalsByFarm($from, $to, $farm_id);
         $grand  = array_sum(array_map(static fn ($r) => (float) $r['qty'], $byCrop));
 
         $summary = [
@@ -172,8 +176,8 @@ switch ($report) {
         break;
 
     case 'harvest_value':
-        $byCrop = Report::harvestValueByCrop($from, $to, $farm_id);
-        $byFarm = Report::harvestValueByFarm($from, $to, $farm_id);
+        $byCrop = $reportModel->harvestValueByCrop($from, $to, $farm_id);
+        $byFarm = $reportModel->harvestValueByFarm($from, $to, $farm_id);
         $grand  = array_sum(array_map(static fn ($r) => (float) $r['value'], $byCrop));
 
         $summary = [

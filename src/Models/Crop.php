@@ -9,21 +9,69 @@ declare(strict_types=1);
  * listing, lookup by id (with category and season joined), dropdown
  * option lists, the reads used by the detail page, validation and
  * create / update / delete. HTML lives in public/crops/*.php.
+ *
+ * The generic all() / find() / create() / update() / delete() / count()
+ * methods come from the shared Model base class.
  */
 final class Crop extends Model
 {
-    protected static string $table      = 'crop';
-    protected static string $primaryKey = 'crop_id';
+    protected string $table      = 'crop';
+    protected string $primaryKey = 'crop_id';
 
     public const SORTABLE = ['name', 'category', 'season', 'period', 'plantings'];
 
-    public static function find(int $id): ?array
+    /** Free-text search over name/variety, with optional category/season. */
+    public function search(string $term, int $categoryId = 0, int $seasonId = 0): array
     {
-        return Database::one('SELECT * FROM crop WHERE crop_id = :id', [':id' => $id]);
+        $filters = [];
+        foreach (preg_split('/\s+/', trim($term)) ?: [] as $word) {
+            // Commas and parentheses would break the or=(...) filter syntax.
+            $word = trim(str_replace([',', '(', ')'], ' ', $word));
+            if ($word === '') {
+                continue;
+            }
+            $filters[] = 'or=(crop_name.ilike.%' . $word . '%,variety.ilike.%' . $word . '%)';
+        }
+        if ($categoryId > 0) {
+            $filters[] = 'category_id=eq.' . $categoryId;
+        }
+        if ($seasonId > 0) {
+            $filters[] = 'season_id=eq.' . $seasonId;
+        }
+
+        return $this->all($filters, ['order' => 'crop_name, variety']);
     }
 
+    /* ---------------------------------------------------------------
+     * Dropdown option lists
+     * ------------------------------------------------------------- */
+
+    public function categories(): array
+    {
+        return $this->db->select('crop_category', '*', [], ['order' => 'category_name']);
+    }
+
+    public function seasons(): array
+    {
+        return $this->db->select('season', '*', [], ['order' => 'season_name']);
+    }
+
+    public function options(): array
+    {
+        return $this->db->select(
+            'crop',
+            'crop_id, crop_name, variety, growing_period_days',
+            [],
+            ['order' => 'crop_name, variety']
+        );
+    }
+
+    /* ---------------------------------------------------------------
+     * Crop-specific reads (need joins / aggregates, so they use SQL)
+     * ------------------------------------------------------------- */
+
     /** Crop detail row with category and season names (detail page). */
-    public static function detail(int $id): ?array
+    public function detail(int $id): ?array
     {
         return Database::one(
             'SELECT c.*, cc.category_name, s.season_name
@@ -35,28 +83,12 @@ final class Crop extends Model
         );
     }
 
-    /** Crop option list for dropdowns. */
-    public static function options(): array
-    {
-        return Database::all('SELECT crop_id, crop_name, variety, growing_period_days FROM crop ORDER BY crop_name, variety');
-    }
-
-    public static function categories(): array
-    {
-        return Database::all('SELECT * FROM crop_category ORDER BY category_name');
-    }
-
-    public static function seasons(): array
-    {
-        return Database::all('SELECT * FROM season ORDER BY season_name');
-    }
-
     /**
      * Filtered, sorted, paginated list for the crops index view.
      *
      * @return array{rows: array<int,array<string,mixed>>, pager: array<string,mixed>}
      */
-    public static function listing(string $q, int $categoryId, int $seasonId, string $sort, string $dir, int $page): array
+    public function listing(string $q, int $categoryId, int $seasonId, string $sort, string $dir, int $page): array
     {
         $where  = [];
         $params = [];
@@ -82,10 +114,13 @@ final class Crop extends Model
             'period'    => 'c.growing_period_days',
             'plantings' => 'planting_count',
         ];
-        $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', c.crop_id DESC';
+        $direction = strtolower($dir) === 'desc' ? 'DESC' : 'ASC';
+        $orderSql  = ($orderMap[$sort] ?? $orderMap['name']) . ' ' . $direction . ', c.crop_id DESC';
 
-        return self::paginateQuery(
-            'SELECT COUNT(*) FROM crop c' . $whereSql,
+        $total = Database::count('SELECT COUNT(*) FROM crop c' . $whereSql, $params);
+        $pager = paginate($total, $page);
+
+        $rows = Database::all(
             "SELECT c.crop_id, c.crop_name, c.variety, c.growing_period_days,
                     cc.category_name, s.season_name,
                     COUNT(DISTINCT p.planting_id) AS planting_count,
@@ -99,13 +134,14 @@ final class Crop extends Model
               GROUP BY c.crop_id, cc.category_name, s.season_name
               ORDER BY {$orderSql}
               LIMIT :limit OFFSET :offset",
-            $params,
-            $page
+            $params + [':limit' => $pager['limit'], ':offset' => $pager['offset']]
         );
+
+        return ['rows' => $rows, 'pager' => $pager];
     }
 
     /** Planting records for one crop (detail page table). */
-    public static function plantings(int $cropId): array
+    public function plantings(int $cropId): array
     {
         return Database::all(
             'SELECT * FROM v_planting_detail WHERE crop_id = :id ORDER BY planting_date DESC, planting_id DESC',
@@ -114,7 +150,7 @@ final class Crop extends Model
     }
 
     /** Aggregated statistics for one crop (detail page). */
-    public static function stats(int $cropId): array
+    public function stats(int $cropId): array
     {
         return Database::one(
             'SELECT COUNT(DISTINCT p.planting_id) AS plantings,
@@ -127,12 +163,16 @@ final class Crop extends Model
         ) ?? [];
     }
 
+    /* ---------------------------------------------------------------
+     * Validation + save
+     * ------------------------------------------------------------- */
+
     /**
      * Validate and persist a crop record.
      *
      * @return array{ok:bool, id:?int, errors: array<string,string>, dbError:?string}
      */
-    public static function save(array $input, int $id = 0): array
+    public function save(array $input, int $id = 0): array
     {
         $v = new Validator($input);
         $v->exists('category_id', 'crop_category', 'category_id', 'Category')
@@ -172,25 +212,12 @@ final class Crop extends Model
 
         try {
             if ($id > 0) {
-                Database::run(
-                    'UPDATE crop
-                        SET category_id = :category_id, season_id = :season_id,
-                            crop_name = :crop_name, variety = :variety,
-                            growing_period_days = :growing_period_days
-                      WHERE crop_id = :id',
-                    $clean + [':id' => $id]
-                );
+                $this->update($id, $clean);
                 return ['ok' => true, 'id' => $id, 'errors' => [], 'dbError' => null];
             }
 
-            $newId = (int) Database::run(
-                'INSERT INTO crop (category_id, season_id, crop_name, variety, growing_period_days)
-                 VALUES (:category_id, :season_id, :crop_name, :variety, :growing_period_days)
-                 RETURNING crop_id',
-                $clean
-            )->fetchColumn();
-
-            return ['ok' => true, 'id' => $newId, 'errors' => [], 'dbError' => null];
+            $row = $this->create($clean);
+            return ['ok' => true, 'id' => (int) ($row['crop_id'] ?? 0), 'errors' => [], 'dbError' => null];
         } catch (PDOException $e) {
             error_log('[crop save] ' . $e->getMessage());
             return ['ok' => false, 'id' => null, 'errors' => [], 'dbError' => friendly_db_error($e)];

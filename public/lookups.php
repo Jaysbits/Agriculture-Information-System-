@@ -11,13 +11,15 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config/config.php';
 Auth::requireAdmin();
 
-$lookups = Lookup::tables();
+$lookup = new Lookup();
+
+$lookups = $lookup->tables();
 
 $tableKey = get('table', 'soil_type');
 if (!isset($lookups[$tableKey])) {
     $tableKey = 'soil_type';
 }
-$config = Lookup::config($tableKey);
+$config = $lookup->config($tableKey);
 $errors = [];
 
 if (is_post()) {
@@ -28,7 +30,7 @@ if (is_post()) {
     $recordId = (int) post('record_id', (string) ($_GET['delete'] ?? '0'));
 
     if ($action === 'delete' && $recordId > 0) {
-        $result = Lookup::delete($tableKey, $recordId);
+        $result = $lookup->delete($tableKey, $recordId);
         if (!$result['ok']) {
             flash('danger', $result['error']);
         } else {
@@ -37,7 +39,7 @@ if (is_post()) {
         redirect('lookups.php?table=' . urlencode($tableKey));
     }
 
-    $result = Lookup::save($tableKey, $action, $name, $recordId);
+    $result = $lookup->save($tableKey, $action, $name, $recordId);
     if ($result['ok']) {
         flash('success', $action === 'update' ? 'Lookup value updated.' : 'Lookup value added.');
         redirect('lookups.php?table=' . urlencode($tableKey));
@@ -49,7 +51,7 @@ if (is_post()) {
     }
 }
 
-$rows = Lookup::rows($tableKey);
+$rows = $lookup->rows($tableKey);
 
 $pageTitle    = 'Lookup tables';
 $active       = 'lookups';

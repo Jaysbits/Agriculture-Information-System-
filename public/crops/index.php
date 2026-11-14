@@ -9,6 +9,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$cropModel = new Crop();
+
 $q           = get('q');
 $category_id = int_get('category_id', 0);
 $season_id   = int_get('season_id', 0);
@@ -16,12 +18,12 @@ $sort        = current_sort('name', Crop::SORTABLE);
 $dir         = current_dir();
 $page        = max(1, int_get('page', 1));
 
-$result = Crop::listing($q, $category_id, $season_id, $sort, $dir, $page);
+$result = $cropModel->listing($q, $category_id, $season_id, $sort, $dir, $page);
 $crops  = $result['rows'];
 $p      = $result['pager'];
 
-$categories = Crop::categories();
-$seasons    = Crop::seasons();
+$categories = $cropModel->categories();
+$seasons    = $cropModel->seasons();
 
 $pageTitle    = 'Crops';
 $active       = 'crops';

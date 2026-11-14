@@ -10,13 +10,15 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$farmerModel = new Farmer();
+
 $q       = get('q');
 $address = get('address');
 $sort    = current_sort('name', Farmer::SORTABLE);
 $dir     = current_dir();
 $page    = max(1, int_get('page', 1));
 
-$result  = Farmer::listing($q, $address, $sort, $dir, $page);
+$result  = $farmerModel->listing($q, $address, $sort, $dir, $page);
 $farmers = $result['rows'];
 $p       = $result['pager'];
 

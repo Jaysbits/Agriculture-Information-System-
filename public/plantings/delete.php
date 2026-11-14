@@ -21,7 +21,7 @@ if ($id <= 0) {
     redirect('plantings/index.php');
 }
 
-$result = Planting::delete($id);
+$result = (new Planting())->delete($id);
 if (!$result['ok']) {
     flash('danger', $result['error']);
 } elseif (!$result['deleted']) {

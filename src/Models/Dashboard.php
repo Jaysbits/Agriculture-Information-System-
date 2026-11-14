@@ -9,11 +9,23 @@ declare(strict_types=1);
  * the summary counters, the plantings-by-status breakdown, the monthly
  * harvest series and the "recent / upcoming / top" panels. The view
  * only formats and renders the rows.
+ *
+ * Used as an object:
+ *
+ *     $dashboard = new Dashboard();
+ *     $dashboard->summary();
  */
 final class Dashboard
 {
+    private Database $db;
+
+    public function __construct(?Database $db = null)
+    {
+        $this->db = $db ?? new Database();
+    }
+
     /** Headline counters used by the summary cards. */
-    public static function summary(): array
+    public function summary(): array
     {
         return Database::one(
             'SELECT
@@ -31,7 +43,7 @@ final class Dashboard
     }
 
     /** Planting counts and area grouped by status. */
-    public static function statusBreakdown(): array
+    public function statusBreakdown(): array
     {
         return Database::all(
             'SELECT s.status_id, s.status_name, COUNT(p.planting_id) AS total, COALESCE(SUM(p.area_planted), 0) AS area
@@ -43,7 +55,7 @@ final class Dashboard
     }
 
     /** Harvest totals per month for the last six months (raw rows). */
-    public static function monthlyHarvest(): array
+    public function monthlyHarvest(): array
     {
         return Database::all(
             "SELECT to_char(harvest_date, 'YYYY-MM') AS ym,
@@ -55,23 +67,27 @@ final class Dashboard
         );
     }
 
-    public static function recentPlantings(int $limit = 5): array
+    public function recentPlantings(int $limit = 5): array
     {
-        return Database::all(
-            "SELECT * FROM v_planting_detail ORDER BY planting_date DESC, planting_id DESC LIMIT {$limit}"
-        );
+        return $this->db->select('v_planting_detail', '*', [], [
+            'order' => 'planting_date DESC, planting_id DESC',
+            'limit' => $limit,
+        ]);
     }
 
-    public static function recentHarvests(int $limit = 5): array
+    public function recentHarvests(int $limit = 5): array
     {
-        return Database::all(
-            "SELECT * FROM v_harvest_detail ORDER BY harvest_date DESC, harvest_id DESC LIMIT {$limit}"
-        );
+        return $this->db->select('v_harvest_detail', '*', [], [
+            'order' => 'harvest_date DESC, harvest_id DESC',
+            'limit' => $limit,
+        ]);
     }
 
     /** Plantings expected to be harvested within the next 30 days. */
-    public static function upcomingHarvests(int $limit = 5): array
+    public function upcomingHarvests(int $limit = 5): array
     {
+        $limit = max(1, $limit);
+
         return Database::all(
             "SELECT * FROM v_planting_detail
               WHERE expected_harvest_date IS NOT NULL
@@ -82,8 +98,10 @@ final class Dashboard
     }
 
     /** Top crops by harvested quantity. */
-    public static function topCrops(int $limit = 5): array
+    public function topCrops(int $limit = 5): array
     {
+        $limit = max(1, $limit);
+
         return Database::all(
             "SELECT c.crop_name, c.variety, COUNT(h.harvest_id) AS harvests,
                     SUM(h.quantity_kg) AS qty,

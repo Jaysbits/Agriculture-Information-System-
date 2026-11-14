@@ -9,16 +9,18 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$cropModel = new Crop();
+
 $id       = form_id();
-$existing = $id > 0 ? Crop::find($id) : null;
+$existing = $id > 0 ? $cropModel->find($id) : null;
 
 if ($id > 0 && !$existing) {
     flash('danger', 'That crop record no longer exists.');
     redirect('crops/index.php');
 }
 
-$categories = Crop::categories();
-$seasons    = Crop::seasons();
+$categories = $cropModel->categories();
+$seasons    = $cropModel->seasons();
 
 $data = $existing ?? [
     'category_id'         => '',
@@ -32,7 +34,7 @@ $errors = [];
 if (is_post()) {
     verify_csrf();
 
-    $result = Crop::save($_POST, $id);
+    $result = $cropModel->save($_POST, $id);
     if ($result['ok']) {
         flash('success', $existing ? 'Crop updated successfully.' : 'Crop added successfully.');
         redirect('crops/view.php?id=' . $result['id']);

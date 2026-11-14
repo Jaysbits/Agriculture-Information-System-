@@ -9,6 +9,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$farmModel = new Farm();
+
 $q             = get('q');
 $irrigation_id = int_get('irrigation_id', 0);
 $soil_type_id  = int_get('soil_type_id', 0);
@@ -16,12 +18,12 @@ $sort          = current_sort('name', Farm::SORTABLE);
 $dir           = current_dir();
 $page          = max(1, int_get('page', 1));
 
-$result = Farm::listing($q, $irrigation_id, $soil_type_id, $sort, $dir, $page);
+$result = $farmModel->listing($q, $irrigation_id, $soil_type_id, $sort, $dir, $page);
 $farms  = $result['rows'];
 $p      = $result['pager'];
 
-$soilTypes       = Farm::soilTypes();
-$irrigationTypes = Farm::irrigationTypes();
+$soilTypes       = $farmModel->soilTypes();
+$irrigationTypes = $farmModel->irrigationTypes();
 
 $pageTitle    = 'Farms';
 $active       = 'farms';

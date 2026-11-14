@@ -9,8 +9,10 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$farmerModel = new Farmer();
+
 $id       = form_id();
-$existing = $id > 0 ? Farmer::find($id) : null;
+$existing = $id > 0 ? $farmerModel->find($id) : null;
 
 if ($id > 0 && !$existing) {
     flash('danger', 'That farmer record no longer exists.');
@@ -29,7 +31,7 @@ $errors = [];
 if (is_post()) {
     verify_csrf();
 
-    $result = Farmer::save($_POST, $id);
+    $result = $farmerModel->save($_POST, $id);
     if ($result['ok']) {
         flash('success', $existing ? 'Farmer updated successfully.' : 'Farmer registered successfully.');
         redirect('farmers/view.php?id=' . $result['id']);

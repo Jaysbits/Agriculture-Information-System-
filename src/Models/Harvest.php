@@ -10,37 +10,34 @@ declare(strict_types=1);
  * the table, lookup by id, dropdown option lists, the reads used by
  * the detail page, validation and create / update / delete.
  * HTML lives in public/harvests/*.php.
+ *
+ * Generic all() / find() / create() / update() / delete() come from Model.
  */
 final class Harvest extends Model
 {
-    protected static string $table      = 'harvest';
-    protected static string $primaryKey = 'harvest_id';
+    protected string $table      = 'harvest';
+    protected string $primaryKey = 'harvest_id';
 
     public const SORTABLE = ['date', 'farm', 'crop', 'grade', 'qty', 'value'];
 
-    public static function find(int $id): ?array
-    {
-        return Database::one('SELECT * FROM harvest WHERE harvest_id = :id', [':id' => $id]);
-    }
-
     /** Harvest detail row from the reporting view. */
-    public static function detail(int $id): ?array
+    public function detail(int $id): ?array
     {
         return Database::one('SELECT * FROM v_harvest_detail WHERE harvest_id = :id', [':id' => $id]);
     }
 
-    public static function grades(): array
+    public function grades(): array
     {
-        return Database::all('SELECT * FROM quality_grade ORDER BY grade_id');
+        return $this->db->select('quality_grade', '*', [], ['order' => 'grade_id']);
     }
 
-    public static function remarks(): array
+    public function remarks(): array
     {
-        return Database::all('SELECT * FROM harvest_remark ORDER BY remark_id');
+        return $this->db->select('harvest_remark', '*', [], ['order' => 'remark_id']);
     }
 
     /** Compact farm list for filters. */
-    public static function farmFilterOptions(): array
+    public function farmFilterOptions(): array
     {
         return Database::all(
             'SELECT fm.farm_id, fm.farm_name, fa.last_name FROM farm fm
@@ -55,7 +52,7 @@ final class Harvest extends Model
      *
      * @return array{rows: array<int,array<string,mixed>>, pager: array<string,mixed>, aggregate: array<string,mixed>}
      */
-    public static function listing(
+    public function listing(
         string $q,
         int $gradeId,
         int $remarkId,
@@ -112,7 +109,7 @@ final class Harvest extends Model
         ];
         $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', v.harvest_id DESC';
 
-        $result = self::paginateQuery(
+        $result = $this->paginateQuery(
             "SELECT COUNT(*) FROM v_harvest_detail v {$whereSql}",
             "SELECT v.* FROM v_harvest_detail v
                {$whereSql}
@@ -130,7 +127,7 @@ final class Harvest extends Model
     }
 
     /** Other harvest records from the same planting (detail page table). */
-    public static function siblings(int $plantingId, int $excludeId): array
+    public function siblings(int $plantingId, int $excludeId): array
     {
         return Database::all(
             'SELECT harvest_id, harvest_date, quantity_kg, grade_name
@@ -142,7 +139,7 @@ final class Harvest extends Model
     }
 
     /** Harvest totals for a planting (detail page). */
-    public static function plantingTotals(int $plantingId): array
+    public function plantingTotals(int $plantingId): array
     {
         return Database::one(
             'SELECT COUNT(*) AS records, COALESCE(SUM(quantity_kg), 0) AS qty,
@@ -157,7 +154,7 @@ final class Harvest extends Model
      *
      * @return array{ok:bool, id:?int, errors: array<string,string>, dbError:?string}
      */
-    public static function save(array $input, int $id = 0): array
+    public function save(array $input, int $id = 0): array
     {
         $v = new Validator($input);
         $v->exists('planting_id', 'planting', 'planting_id', 'Planting record')
@@ -203,25 +200,12 @@ final class Harvest extends Model
 
         try {
             if ($id > 0) {
-                Database::run(
-                    'UPDATE harvest
-                        SET planting_id = :planting_id, grade_id = :grade_id, remark_id = :remark_id,
-                            harvest_date = :harvest_date, quantity_kg = :quantity_kg,
-                            selling_price_per_kg = :selling_price_per_kg
-                      WHERE harvest_id = :id',
-                    $clean + [':id' => $id]
-                );
+                $this->update($id, $clean);
                 return ['ok' => true, 'id' => $id, 'errors' => [], 'dbError' => null];
             }
 
-            $newId = (int) Database::run(
-                'INSERT INTO harvest (planting_id, grade_id, remark_id, harvest_date, quantity_kg, selling_price_per_kg)
-                 VALUES (:planting_id, :grade_id, :remark_id, :harvest_date, :quantity_kg, :selling_price_per_kg)
-                 RETURNING harvest_id',
-                $clean
-            )->fetchColumn();
-
-            return ['ok' => true, 'id' => $newId, 'errors' => [], 'dbError' => null];
+            $row = $this->create($clean);
+            return ['ok' => true, 'id' => (int) ($row['harvest_id'] ?? 0), 'errors' => [], 'dbError' => null];
         } catch (PDOException $e) {
             error_log('[harvest save] ' . $e->getMessage());
             return ['ok' => false, 'id' => null, 'errors' => [], 'dbError' => friendly_db_error($e)];

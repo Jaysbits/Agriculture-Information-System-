@@ -12,15 +12,30 @@ declare(strict_types=1);
  *
  * This model owns the registry, the usage counts, the duplicate check
  * and add / update / delete. HTML lives in public/lookups.php.
+ *
+ * Used as an object:
+ *
+ *     $lookup = new Lookup();
+ *     $lookup->tables();
+ *     $lookup->rows('soil_type');
+ *     $lookup->save('soil_type', 'add', 'Clay', 0);
+ *     $lookup->delete('soil_type', 4);
  */
 final class Lookup
 {
+    private Database $db;
+
+    public function __construct(?Database $db = null)
+    {
+        $this->db = $db ?? new Database();
+    }
+
     /**
      * Registry of reference tables. Keys are the ?table= values.
      *
      * @return array<string,array<string,mixed>>
      */
-    public static function tables(): array
+    public function tables(): array
     {
         return [
             'soil_type' => [
@@ -55,9 +70,9 @@ final class Lookup
     }
 
     /** Registry entry for one table key, or null when unknown. */
-    public static function config(string $tableKey): ?array
+    public function config(string $tableKey): ?array
     {
-        return self::tables()[$tableKey] ?? null;
+        return $this->tables()[$tableKey] ?? null;
     }
 
     /**
@@ -65,9 +80,9 @@ final class Lookup
      *
      * @return array<int,array<string,mixed>>
      */
-    public static function rows(string $tableKey): array
+    public function rows(string $tableKey): array
     {
-        $config = self::config($tableKey);
+        $config = $this->config($tableKey);
         if ($config === null) {
             return [];
         }
@@ -86,9 +101,9 @@ final class Lookup
      *
      * @return array{ok:bool, errors: array<string,string>, dbError:?string}
      */
-    public static function save(string $tableKey, string $action, string $name, int $recordId): array
+    public function save(string $tableKey, string $action, string $name, int $recordId): array
     {
-        $config = self::config($tableKey);
+        $config = $this->config($tableKey);
         if ($config === null) {
             return ['ok' => false, 'errors' => ['_form' => 'Unknown lookup table.'], 'dbError' => null];
         }
@@ -113,15 +128,9 @@ final class Lookup
 
         try {
             if ($action === 'add') {
-                Database::run(
-                    "INSERT INTO {$tableKey} ({$config['name']}) VALUES (:name)",
-                    [':name' => $name]
-                );
+                $this->db->insert($tableKey, [$config['name'] => $name]);
             } elseif ($action === 'update' && $recordId > 0) {
-                Database::run(
-                    "UPDATE {$tableKey} SET {$config['name']} = :name WHERE {$config['id']} = :id",
-                    [':name' => $name, ':id' => $recordId]
-                );
+                $this->db->update($tableKey, [$config['name'] => $name], [$config['id'] . '=eq.' . $recordId]);
             }
 
             return ['ok' => true, 'errors' => [], 'dbError' => null];
@@ -136,19 +145,15 @@ final class Lookup
      *
      * @return array{ok:bool, error:?string}
      */
-    public static function delete(string $tableKey, int $recordId): array
+    public function delete(string $tableKey, int $recordId): array
     {
-        $config = self::config($tableKey);
+        $config = $this->config($tableKey);
         if ($config === null || $recordId <= 0) {
             return ['ok' => false, 'error' => 'Invalid lookup value.'];
         }
 
-        try {
-            Database::run("DELETE FROM {$tableKey} WHERE {$config['id']} = :id", [':id' => $recordId]);
-            return ['ok' => true, 'error' => null];
-        } catch (PDOException $e) {
-            error_log('[lookup delete] ' . $e->getMessage());
-            return ['ok' => false, 'error' => friendly_db_error($e)];
-        }
+        $result = $this->db->delete($tableKey, [$config['id'] . '=eq.' . $recordId]);
+
+        return ['ok' => $result['ok'], 'error' => $result['error']];
     }
 }

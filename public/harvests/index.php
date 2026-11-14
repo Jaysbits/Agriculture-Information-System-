@@ -10,6 +10,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$harvestModel = new Harvest();
+
 $q         = get('q');
 $grade_id  = int_get('grade_id', 0);
 $remark_id = int_get('remark_id', 0);
@@ -20,15 +22,15 @@ $sort      = current_sort('date', Harvest::SORTABLE);
 $dir       = current_dir();
 $page      = max(1, int_get('page', 1));
 
-$result   = Harvest::listing($q, $grade_id, $remark_id, $farm_id, $dateFrom, $dateTo, $sort, $dir, $page);
+$result   = $harvestModel->listing($q, $grade_id, $remark_id, $farm_id, $dateFrom, $dateTo, $sort, $dir, $page);
 $harvests = $result['rows'];
 $p        = $result['pager'];
 $aggregate = $result['aggregate'];
 $total    = (int) $p['total'];
 
-$grades  = Harvest::grades();
-$remarks = Harvest::remarks();
-$farms   = Harvest::farmFilterOptions();
+$grades  = $harvestModel->grades();
+$remarks = $harvestModel->remarks();
+$farms   = $harvestModel->farmFilterOptions();
 
 $pageTitle    = 'Harvest records';
 $active       = 'harvests';

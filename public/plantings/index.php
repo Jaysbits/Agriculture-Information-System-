@@ -9,6 +9,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$plantingModel = new Planting();
+
 $q         = get('q');
 $status_id = int_get('status_id', 0);
 $farm_id   = int_get('farm_id', 0);
@@ -19,13 +21,13 @@ $sort      = current_sort('date', Planting::SORTABLE);
 $dir       = current_dir();
 $page      = max(1, int_get('page', 1));
 
-$result    = Planting::listing($q, $status_id, $farm_id, $crop_id, $dateFrom, $dateTo, $sort, $dir, $page);
+$result    = $plantingModel->listing($q, $status_id, $farm_id, $crop_id, $dateFrom, $dateTo, $sort, $dir, $page);
 $plantings = $result['rows'];
 $p         = $result['pager'];
 
-$statuses = Planting::statuses();
-$farms    = Planting::farmFilterOptions();
-$crops    = Planting::cropFilterOptions();
+$statuses = $plantingModel->statuses();
+$farms    = $plantingModel->farmFilterOptions();
+$crops    = $plantingModel->cropFilterOptions();
 
 $pageTitle    = 'Planting records';
 $active       = 'plantings';

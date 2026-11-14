@@ -169,20 +169,26 @@ AgriSys uses a classic three-tier structure.
    `Auth::requireAdmin()`).
 4. Input is read through `get()` / `post()` / `int_get()` / `form_id()` and
    validated inside the entity's model.
-5. The page calls the model (e.g. `Farmer::save()`, `Harvest::listing()`), which
-   runs prepared statements through `Database`/PDO.
+5. The page creates the model object (e.g. `$farmer = new Farmer();`) and calls
+   it (e.g. `$farmer->save(...)`, `$harvest->listing(...)`), which runs prepared
+   statements through `Database`/PDO.
 6. The page sets flash messages and redirects (POST/redirect/GET), or renders
    HTML through `partials/header.php` and `partials/footer.php`.
 
 ### Models (the data-access layer)
 
 Every entity owns a model in `src/Models/`. Pages never contain SQL — they call
-the model, which returns plain arrays. `Model.php` is the shared base class
-(pagination, safe ordering and a generic delete); the rest extend it.
+the model, which returns plain arrays. Models are used as **objects**: `Model.php`
+is the abstract base class that supplies generic CRUD (`all()`, `find()`,
+`create()`, `update()`, `delete()`, `count()`), pagination and safe ordering, and
+the rest extend it. The generic methods delegate to the table-oriented API on
+`Database` (`select`, `find`, `insert`, `update`, `delete`), which accepts
+Supabase/PostgREST-style filter strings such as `column=eq.value`,
+`column=ilike.%x%` and `or=(a.ilike.%x%,b.ilike.%x%)`.
 
 | Model | Responsibility |
 | --- | --- |
-| `Model.php` | Base: `paginateQuery()`, whitelisted `orderBy()`, generic `delete()` |
+| `Model.php` | Base: generic `all()`/`find()`/`create()`/`update()`/`delete()`/`count()`, `paginateQuery()`, whitelisted `orderBy()` |
 | `Farmer.php` | Farmer CRUD, listing, detail, stats |
 | `Farm.php` | Farm CRUD, listing, detail, `options()` for dropdowns |
 | `Crop.php` | Crop CRUD, `categories()`, `seasons()`, `options()`, detail, stats |
@@ -207,13 +213,22 @@ Model conventions:
 
 | Method | Purpose |
 | --- | --- |
-| `connection()` | Creates the singleton PDO connection with `ERRMODE_EXCEPTION`, `FETCH_ASSOC`, real prepared statements and SSL mode |
-| `run($sql, $params)` | Executes a statement and returns the `PDOStatement` |
+| `pdo()` | Creates the singleton PDO connection with `ERRMODE_EXCEPTION`, `FETCH_ASSOC`, real prepared statements and SSL mode |
+| `select($table, $cols, $filters, $options)` | Generic SELECT using PostgREST-style filter strings plus `order`/`limit`/`offset` options |
+| `find($table, $id, $pk)` | One row by primary key |
+| `insert($table, $data)` | `INSERT … RETURNING *` |
+| `update($table, $data, $filters)` | `UPDATE … RETURNING *` |
+| `delete($table, $filters)` | `DELETE`, returning `['ok' =>, 'deleted' =>, 'error' =>]` with a friendly message |
+| `run($sql, $params)` | Executes a raw statement and returns the `PDOStatement` |
 | `one($sql, $params)` | Returns one row or `null` |
 | `all($sql, $params)` | Returns all rows |
 | `value($sql, $params, $default)` | Returns the first column of the first row |
 | `count($sql, $params)` | Returns an integer count |
 | `setAuditUser($id)` | Sets `agrisys.user_id` for the audit triggers |
+
+`select`/`find`/`insert`/`update`/`delete` are instance methods used by the
+models; the rest are static raw-SQL helpers. Table and column names are
+whitelisted against a plain-identifier pattern, and every value is bound.
 
 ---
 
@@ -1086,7 +1101,7 @@ Open the account menu at the top right and choose **Sign out**.
 | `src/Auth.php` | Login, roles, throttling |
 | `src/Validator.php` | Validation rules |
 | `src/helpers.php` | Escaping, URLs, CSRF, flash, pagination, formatting |
-| `src/Models/Model.php` | Base model: pagination, ordering, generic delete |
+| `src/Models/Model.php` | Base model: generic CRUD, pagination, ordering |
 | `src/Models/Farmer.php` | Farmer model (CRUD + queries) |
 | `src/Models/Farm.php` | Farm model (CRUD + dropdown options) |
 | `src/Models/Crop.php` | Crop model (CRUD + categories/seasons/options) |

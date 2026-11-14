@@ -9,25 +9,25 @@ declare(strict_types=1);
  * search / sort / pagination, single-record lookup, the read queries
  * used by the farmer detail page, validation and create / update /
  * delete. The matching HTML is in public/farmers/*.php.
+ *
+ * Generic all() / find() / create() / update() / delete() come from Model.
  */
 final class Farmer extends Model
 {
-    protected static string $table      = 'farmer';
-    protected static string $primaryKey = 'farmer_id';
+    protected string $table      = 'farmer';
+    protected string $primaryKey = 'farmer_id';
 
     /** Sort keys accepted by the index page. */
     public const SORTABLE = ['name', 'address', 'registered', 'farms'];
 
-    public static function find(int $id): ?array
-    {
-        return Database::one('SELECT * FROM farmer WHERE farmer_id = :id', [':id' => $id]);
-    }
-
     /** Farmer list for dropdowns. */
-    public static function options(): array
+    public function options(): array
     {
-        return Database::all(
-            'SELECT farmer_id, first_name, last_name, address FROM farmer ORDER BY last_name, first_name'
+        return $this->db->select(
+            'farmer',
+            'farmer_id, first_name, last_name, address',
+            [],
+            ['order' => 'last_name, first_name']
         );
     }
 
@@ -36,7 +36,7 @@ final class Farmer extends Model
      *
      * @return array{rows: array<int,array<string,mixed>>, pager: array<string,mixed>}
      */
-    public static function listing(string $q, string $address, string $sort, string $dir, int $page): array
+    public function listing(string $q, string $address, string $sort, string $dir, int $page): array
     {
         $where  = [];
         $params = [];
@@ -60,7 +60,7 @@ final class Farmer extends Model
         ];
         $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', f.farmer_id DESC';
 
-        return self::paginateQuery(
+        return $this->paginateQuery(
             'SELECT COUNT(*) FROM farmer f' . $whereSql,
             "SELECT f.farmer_id, f.first_name, f.last_name, f.contact_number, f.address,
                     f.date_registered, f.created_at,
@@ -78,7 +78,7 @@ final class Farmer extends Model
     }
 
     /** Farms belonging to one farmer (used by the detail page). */
-    public static function farms(int $farmerId): array
+    public function farms(int $farmerId): array
     {
         return Database::all(
             'SELECT fm.farm_id, fm.farm_name, fm.location, fm.area_hectares,
@@ -97,7 +97,7 @@ final class Farmer extends Model
     }
 
     /** Aggregated statistics for one farmer (used by the detail page). */
-    public static function stats(int $farmerId): array
+    public function stats(int $farmerId): array
     {
         return Database::one(
             'SELECT COUNT(DISTINCT fm.farm_id) AS farms,
@@ -125,7 +125,7 @@ final class Farmer extends Model
      * @param int                 $id     0 = create, >0 = update.
      * @return array{ok:bool, id:?int, errors: array<string,string>, dbError:?string}
      */
-    public static function save(array $input, int $id = 0): array
+    public function save(array $input, int $id = 0): array
     {
         $v = new Validator($input);
         $v->required('first_name', 'First name')
@@ -152,25 +152,12 @@ final class Farmer extends Model
 
         try {
             if ($id > 0) {
-                Database::run(
-                    'UPDATE farmer
-                        SET first_name = :first_name, last_name = :last_name,
-                            contact_number = :contact_number, address = :address,
-                            date_registered = :date_registered
-                      WHERE farmer_id = :id',
-                    $clean + [':id' => $id]
-                );
+                $this->update($id, $clean);
                 return ['ok' => true, 'id' => $id, 'errors' => [], 'dbError' => null];
             }
 
-            $newId = (int) Database::run(
-                'INSERT INTO farmer (first_name, last_name, contact_number, address, date_registered)
-                 VALUES (:first_name, :last_name, :contact_number, :address, :date_registered)
-                 RETURNING farmer_id',
-                $clean
-            )->fetchColumn();
-
-            return ['ok' => true, 'id' => $newId, 'errors' => [], 'dbError' => null];
+            $row = $this->create($clean);
+            return ['ok' => true, 'id' => (int) ($row['farmer_id'] ?? 0), 'errors' => [], 'dbError' => null];
         } catch (PDOException $e) {
             error_log('[farmer save] ' . $e->getMessage());
             return ['ok' => false, 'id' => null, 'errors' => [], 'dbError' => friendly_db_error($e)];

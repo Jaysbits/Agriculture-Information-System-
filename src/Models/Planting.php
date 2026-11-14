@@ -9,27 +9,24 @@ declare(strict_types=1);
  * listing (via the v_planting_detail view), lookup by id, dropdown
  * option lists, the harvest reads used by the detail page, validation
  * and create / update / delete. HTML lives in public/plantings/*.php.
+ *
+ * Generic all() / find() / create() / update() / delete() come from Model.
  */
 final class Planting extends Model
 {
-    protected static string $table      = 'planting';
-    protected static string $primaryKey = 'planting_id';
+    protected string $table      = 'planting';
+    protected string $primaryKey = 'planting_id';
 
     public const SORTABLE = ['date', 'farm', 'crop', 'status', 'area', 'expected'];
 
-    public static function find(int $id): ?array
-    {
-        return Database::one('SELECT * FROM planting WHERE planting_id = :id', [':id' => $id]);
-    }
-
     /** Planting detail row from the reporting view. */
-    public static function detail(int $id): ?array
+    public function detail(int $id): ?array
     {
         return Database::one('SELECT * FROM v_planting_detail WHERE planting_id = :id', [':id' => $id]);
     }
 
     /** Planting option list for the harvest form. */
-    public static function options(): array
+    public function options(): array
     {
         return Database::all(
             'SELECT planting_id, farm_name, farmer_name, crop_name, variety, planting_date, status_name
@@ -38,13 +35,13 @@ final class Planting extends Model
         );
     }
 
-    public static function statuses(): array
+    public function statuses(): array
     {
-        return Database::all('SELECT * FROM planting_status ORDER BY status_id');
+        return $this->db->select('planting_status', '*', [], ['order' => 'status_id']);
     }
 
     /** Compact farm list for filters. */
-    public static function farmFilterOptions(): array
+    public function farmFilterOptions(): array
     {
         return Database::all(
             'SELECT fm.farm_id, fm.farm_name, fa.last_name FROM farm fm
@@ -54,9 +51,9 @@ final class Planting extends Model
     }
 
     /** Compact crop list for filters. */
-    public static function cropFilterOptions(): array
+    public function cropFilterOptions(): array
     {
-        return Database::all('SELECT crop_id, crop_name, variety FROM crop ORDER BY crop_name, variety');
+        return $this->db->select('crop', 'crop_id, crop_name, variety', [], ['order' => 'crop_name, variety']);
     }
 
     /**
@@ -64,7 +61,7 @@ final class Planting extends Model
      *
      * @return array{rows: array<int,array<string,mixed>>, pager: array<string,mixed>}
      */
-    public static function listing(
+    public function listing(
         string $q,
         int $statusId,
         int $farmId,
@@ -114,7 +111,7 @@ final class Planting extends Model
         ];
         $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', v.planting_id DESC';
 
-        return self::paginateQuery(
+        return $this->paginateQuery(
             'SELECT COUNT(*) FROM v_planting_detail v' . $whereSql,
             "SELECT v.*,
                     (SELECT COUNT(*) FROM harvest h WHERE h.planting_id = v.planting_id) AS harvest_count,
@@ -129,7 +126,7 @@ final class Planting extends Model
     }
 
     /** Harvest records for one planting (detail page table). */
-    public static function harvests(int $plantingId): array
+    public function harvests(int $plantingId): array
     {
         return Database::all(
             'SELECT * FROM v_harvest_detail WHERE planting_id = :id ORDER BY harvest_date DESC, harvest_id DESC',
@@ -138,7 +135,7 @@ final class Planting extends Model
     }
 
     /** Harvest totals for one planting (detail page). */
-    public static function harvestTotals(int $plantingId): array
+    public function harvestTotals(int $plantingId): array
     {
         return Database::one(
             'SELECT COUNT(*) AS records, COALESCE(SUM(quantity_kg), 0) AS qty,
@@ -153,7 +150,7 @@ final class Planting extends Model
      *
      * @return array{ok:bool, id:?int, errors: array<string,string>, dbError:?string}
      */
-    public static function save(array $input, int $id = 0): array
+    public function save(array $input, int $id = 0): array
     {
         $v = new Validator($input);
         $v->exists('farm_id', 'farm', 'farm_id', 'Farm')
@@ -210,25 +207,12 @@ final class Planting extends Model
 
         try {
             if ($id > 0) {
-                Database::run(
-                    'UPDATE planting
-                        SET farm_id = :farm_id, crop_id = :crop_id, status_id = :status_id,
-                            planting_date = :planting_date, area_planted = :area_planted,
-                            seed_quantity = :seed_quantity, expected_harvest_date = :expected_harvest_date
-                      WHERE planting_id = :id',
-                    $clean + [':id' => $id]
-                );
+                $this->update($id, $clean);
                 return ['ok' => true, 'id' => $id, 'errors' => [], 'dbError' => null];
             }
 
-            $newId = (int) Database::run(
-                'INSERT INTO planting (farm_id, crop_id, status_id, planting_date, area_planted, seed_quantity, expected_harvest_date)
-                 VALUES (:farm_id, :crop_id, :status_id, :planting_date, :area_planted, :seed_quantity, :expected_harvest_date)
-                 RETURNING planting_id',
-                $clean
-            )->fetchColumn();
-
-            return ['ok' => true, 'id' => $newId, 'errors' => [], 'dbError' => null];
+            $row = $this->create($clean);
+            return ['ok' => true, 'id' => (int) ($row['planting_id'] ?? 0), 'errors' => [], 'dbError' => null];
         } catch (PDOException $e) {
             error_log('[planting save] ' . $e->getMessage());
             return ['ok' => false, 'id' => null, 'errors' => [], 'dbError' => friendly_db_error($e)];

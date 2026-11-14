@@ -9,13 +9,15 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireAdmin();
 
+$userModel = new AppUser();
+
 $q    = get('q');
 $role = get('role');
 $sort = current_sort('username', AppUser::SORTABLE);
 $dir  = current_dir();
 $page = max(1, int_get('page', 1));
 
-$result = AppUser::listing($q, $role, $sort, $dir, $page);
+$result = $userModel->listing($q, $role, $sort, $dir, $page);
 $users  = $result['rows'];
 $p      = $result['pager'];
 

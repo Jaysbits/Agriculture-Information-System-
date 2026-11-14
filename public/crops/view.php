@@ -9,16 +9,18 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$cropModel = new Crop();
+
 $id   = int_get('id', 0);
-$crop = $id > 0 ? Crop::detail($id) : null;
+$crop = $id > 0 ? $cropModel->detail($id) : null;
 
 if (!$crop) {
     flash('danger', 'That crop record could not be found.');
     redirect('crops/index.php');
 }
 
-$plantings = Crop::plantings($id);
-$stats     = Crop::stats($id);
+$plantings = $cropModel->plantings($id);
+$stats     = $cropModel->stats($id);
 
 $pageTitle    = 'Crop details';
 $active       = 'crops';

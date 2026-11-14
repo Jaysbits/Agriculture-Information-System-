@@ -9,17 +9,20 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$harvestModel  = new Harvest();
+$plantingModel = new Planting();
+
 $id       = form_id();
-$existing = $id > 0 ? Harvest::find($id) : null;
+$existing = $id > 0 ? $harvestModel->find($id) : null;
 
 if ($id > 0 && !$existing) {
     flash('danger', 'That harvest record no longer exists.');
     redirect('harvests/index.php');
 }
 
-$plantings = Planting::options();
-$grades    = Harvest::grades();
-$remarks   = Harvest::remarks();
+$plantings = $plantingModel->options();
+$grades    = $harvestModel->grades();
+$remarks   = $harvestModel->remarks();
 
 $data = $existing ?? [
     'planting_id'          => int_get('planting_id', 0) ?: '',
@@ -34,7 +37,7 @@ $errors = [];
 if (is_post()) {
     verify_csrf();
 
-    $result = Harvest::save($_POST, $id);
+    $result = $harvestModel->save($_POST, $id);
     if ($result['ok']) {
         flash('success', $existing ? 'Harvest record updated successfully.' : 'Harvest record added successfully.');
         redirect('harvests/view.php?id=' . $result['id']);

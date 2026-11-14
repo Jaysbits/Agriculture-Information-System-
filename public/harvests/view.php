@@ -9,16 +9,18 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config/config.php';
 Auth::requireLogin();
 
+$harvestModel = new Harvest();
+
 $id      = int_get('id', 0);
-$harvest = $id > 0 ? Harvest::detail($id) : null;
+$harvest = $id > 0 ? $harvestModel->detail($id) : null;
 
 if (!$harvest) {
     flash('danger', 'That harvest record could not be found.');
     redirect('harvests/index.php');
 }
 
-$siblings = Harvest::siblings((int) $harvest['planting_id'], $id);
-$plantingTotals = Harvest::plantingTotals((int) $harvest['planting_id']);
+$siblings = $harvestModel->siblings((int) $harvest['planting_id'], $id);
+$plantingTotals = $harvestModel->plantingTotals((int) $harvest['planting_id']);
 
 $pageTitle    = 'Harvest details';
 $active       = 'harvests';

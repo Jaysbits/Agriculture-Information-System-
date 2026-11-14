@@ -9,23 +9,21 @@ declare(strict_types=1);
  * listing, lookup by id, validation (including password policy and the
  * "last active administrator" guard) and create / update / delete.
  * HTML lives in public/users/*.php.
+ *
+ * Generic all() / find() / create() / update() / delete() / count()
+ * come from the shared Model base class.
  */
 final class AppUser extends Model
 {
-    protected static string $table      = 'app_user';
-    protected static string $primaryKey = 'user_id';
+    protected string $table      = 'app_user';
+    protected string $primaryKey = 'user_id';
 
     public const SORTABLE = ['username', 'name', 'role', 'active', 'last_login'];
 
-    public static function find(int $id): ?array
-    {
-        return Database::one('SELECT * FROM app_user WHERE user_id = :id', [':id' => $id]);
-    }
-
     /** Number of enabled administrator accounts. */
-    public static function activeAdminCount(): int
+    public function activeAdminCount(): int
     {
-        return Database::count("SELECT COUNT(*) FROM app_user WHERE role = 'admin' AND is_active = TRUE");
+        return $this->count(['role=eq.admin', 'is_active=is.true']);
     }
 
     /**
@@ -33,7 +31,7 @@ final class AppUser extends Model
      *
      * @return array{rows: array<int,array<string,mixed>>, pager: array<string,mixed>}
      */
-    public static function listing(string $q, string $role, string $sort, string $dir, int $page): array
+    public function listing(string $q, string $role, string $sort, string $dir, int $page): array
     {
         $where  = [];
         $params = [];
@@ -57,7 +55,7 @@ final class AppUser extends Model
         ];
         $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', user_id DESC';
 
-        return self::paginateQuery(
+        return $this->paginateQuery(
             'SELECT COUNT(*) FROM app_user' . $whereSql,
             "SELECT * FROM app_user {$whereSql} ORDER BY {$orderSql} LIMIT :limit OFFSET :offset",
             $params,
@@ -72,9 +70,9 @@ final class AppUser extends Model
      * @param int $currentUserId Signed-in user (guards self-deactivation).
      * @return array{ok:bool, id:?int, errors: array<string,string>, dbError:?string}
      */
-    public static function save(array $input, int $id = 0, int $currentUserId = 0): array
+    public function save(array $input, int $id = 0, int $currentUserId = 0): array
     {
-        $existing = $id > 0 ? self::find($id) : null;
+        $existing = $id > 0 ? $this->find($id) : null;
 
         $password = (string) ($input['password'] ?? '');
         $confirm  = (string) ($input['password_confirm'] ?? '');
@@ -106,7 +104,7 @@ final class AppUser extends Model
             }
         }
 
-        if ($existing && $existing['role'] === 'admin' && ($role !== 'admin' || !$isActive) && self::activeAdminCount() <= 1) {
+        if ($existing && $existing['role'] === 'admin' && ($role !== 'admin' || !$isActive) && $this->activeAdminCount() <= 1) {
             $v->addError('role', 'The last active administrator cannot be demoted or deactivated.');
         }
         if ($existing && $id === $currentUserId && !$isActive) {
@@ -119,39 +117,31 @@ final class AppUser extends Model
 
         try {
             if ($existing) {
-                $sql = 'UPDATE app_user SET username = :username, full_name = :full_name,
-                               role = :role, is_active = :is_active';
-                $params = [
-                    ':username'  => $v->value('username'),
-                    ':full_name' => $v->value('full_name'),
-                    ':role'      => $role,
-                    ':is_active' => $isActive ? 'true' : 'false',
-                    ':id'        => $id,
+                $clean = [
+                    'username'  => $v->value('username'),
+                    'full_name' => $v->value('full_name'),
+                    'role'      => $role,
+                    // A PHP false binds as '' which is not a valid boolean;
+                    // Postgres accepts the strings 'true' / 'false'.
+                    'is_active' => $isActive ? 'true' : 'false',
                 ];
                 if ($password !== '') {
-                    $sql .= ', password_hash = :password_hash';
-                    $params[':password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+                    $clean['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
                 }
-                $sql .= ' WHERE user_id = :id';
-                Database::run($sql, $params);
+                $this->update($id, $clean);
 
                 return ['ok' => true, 'id' => $id, 'errors' => [], 'dbError' => null];
             }
 
-            $newId = (int) Database::run(
-                'INSERT INTO app_user (username, full_name, password_hash, role, is_active)
-                 VALUES (:username, :full_name, :password_hash, :role, :is_active)
-                 RETURNING user_id',
-                [
-                    ':username'      => $v->value('username'),
-                    ':full_name'     => $v->value('full_name'),
-                    ':password_hash' => password_hash($password, PASSWORD_DEFAULT),
-                    ':role'          => $role,
-                    ':is_active'     => $isActive ? 'true' : 'false',
-                ]
-            )->fetchColumn();
+            $row = $this->create([
+                'username'      => $v->value('username'),
+                'full_name'     => $v->value('full_name'),
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'role'          => $role,
+                'is_active'     => $isActive ? 'true' : 'false',
+            ]);
 
-            return ['ok' => true, 'id' => $newId, 'errors' => [], 'dbError' => null];
+            return ['ok' => true, 'id' => (int) ($row['user_id'] ?? 0), 'errors' => [], 'dbError' => null];
         } catch (PDOException $e) {
             error_log('[user save] ' . $e->getMessage());
             return ['ok' => false, 'id' => null, 'errors' => [], 'dbError' => friendly_db_error($e)];
@@ -163,18 +153,18 @@ final class AppUser extends Model
      *
      * @return array{ok:bool, deleted:bool, error:?string}
      */
-    public static function delete(int $id, int $currentUserId = 0): array
+    public function delete(int $id, int $currentUserId = 0): array
     {
         if ($id === $currentUserId) {
             return ['ok' => false, 'deleted' => false, 'error' => 'You cannot delete your own account while signed in.'];
         }
 
-        $target = self::find($id);
+        $target = $this->find($id);
         if (!$target) {
             return ['ok' => true, 'deleted' => false, 'error' => null];
         }
 
-        if ($target['role'] === 'admin' && $target['is_active'] && self::activeAdminCount() <= 1) {
+        if ($target['role'] === 'admin' && $target['is_active'] && $this->activeAdminCount() <= 1) {
             return ['ok' => false, 'deleted' => false, 'error' => 'The last active administrator account cannot be deleted.'];
         }
 

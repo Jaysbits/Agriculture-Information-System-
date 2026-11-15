@@ -152,7 +152,7 @@ final class Harvest
             'qty'   => 'v.quantity_kg',
             'value' => 'estimated_value',
         ];
-        $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', v.harvest_id DESC';
+        $orderSql = ($orderMap[$sort] ?? $orderMap['date']) . ' ' . strtoupper($dir) . ', v.harvest_id DESC';
 
         $result = $this->paginateQuery(
             "SELECT COUNT(*) FROM v_harvest_detail v {$whereSql}",
@@ -257,3 +257,4 @@ final class Harvest
         }
     }
 }
+

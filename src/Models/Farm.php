@@ -142,7 +142,7 @@ final class Farm
             'irrigation' => 'it.irrigation_name',
             'plantings'  => 'planting_count',
         ];
-        $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', fm.farm_id DESC';
+        $orderSql = ($orderMap[$sort] ?? $orderMap['name']) . ' ' . strtoupper($dir) . ', fm.farm_id DESC';
 
         return $this->paginateQuery(
             "SELECT COUNT(*) FROM farm fm JOIN farmer fa ON fa.farmer_id = fm.farmer_id {$whereSql}",
@@ -246,3 +246,4 @@ final class Farm
         }
     }
 }
+

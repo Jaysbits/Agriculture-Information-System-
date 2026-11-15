@@ -103,7 +103,7 @@ final class Farmer
             'registered' => 'f.date_registered',
             'farms'      => 'farm_count',
         ];
-        $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', f.farmer_id DESC';
+        $orderSql = ($orderMap[$sort] ?? $orderMap['name']) . ' ' . strtoupper($dir) . ', f.farmer_id DESC';
 
         return $this->paginateQuery(
             'SELECT COUNT(*) FROM farmer f' . $whereSql,
@@ -209,3 +209,4 @@ final class Farmer
         }
     }
 }
+

@@ -93,7 +93,7 @@ final class AppUser
             'active'     => 'is_active',
             'last_login' => 'last_login_at',
         ];
-        $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', user_id DESC';
+        $orderSql = ($orderMap[$sort] ?? $orderMap['username']) . ' ' . strtoupper($dir) . ', user_id DESC';
 
         return $this->paginateQuery(
             'SELECT COUNT(*) FROM app_user' . $whereSql,
@@ -211,3 +211,4 @@ final class AppUser
         return $this->db->delete('app_user', ['user_id=eq.' . $id]);
     }
 }
+

@@ -154,7 +154,7 @@ final class Planting
             'area'     => 'v.area_planted',
             'expected' => 'v.expected_harvest_date',
         ];
-        $orderSql = $orderMap[$sort] . ' ' . strtoupper($dir) . ', v.planting_id DESC';
+        $orderSql = ($orderMap[$sort] ?? $orderMap['date']) . ' ' . strtoupper($dir) . ', v.planting_id DESC';
 
         return $this->paginateQuery(
             'SELECT COUNT(*) FROM v_planting_detail v' . $whereSql,
@@ -264,3 +264,4 @@ final class Planting
         }
     }
 }
+

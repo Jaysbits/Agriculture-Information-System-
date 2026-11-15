@@ -69,7 +69,7 @@ function query_url(array $overrides = [], ?string $path = null): string
 {
     $params = array_merge($_GET, $overrides);
     $params = array_filter($params, static fn ($v) => $v !== '' && $v !== null);
-    $path ??= basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
+    $path ??= (string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php');
     $query = http_build_query($params);
     return url($path) . ($query !== '' ? '?' . $query : '');
 }

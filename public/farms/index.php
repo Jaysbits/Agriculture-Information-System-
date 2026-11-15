@@ -99,8 +99,8 @@ require __DIR__ . '/../partials/header.php';
                                 <?= e($row['last_name'] . ', ' . $row['first_name']) ?>
                             </a>
                         </td>
-                        <td><?= e($row['soil_type_name']) ?></td>
-                        <td><?= e($row['irrigation_name']) ?></td>
+                        <td class="text-nowrap"><?= e($row['soil_type_name']) ?></td>
+                        <td class="text-nowrap"><?= e($row['irrigation_name']) ?></td>
                         <td class="text-end">
                             <?= e(fmt_ha($row['area_hectares'])) ?>
                             <?php if ((float) $row['planted_area'] > 0): ?>

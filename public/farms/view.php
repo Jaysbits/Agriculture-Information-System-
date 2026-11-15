@@ -67,7 +67,7 @@ require __DIR__ . '/../partials/header.php';
                     <div class="card stat-card"><div class="stat-body py-3">
                         <div class="min-w-0">
                             <div class="stat-label"><?= e($tile['label']) ?></div>
-                            <div class="fw-semibold text-truncate" style="font-size:1.05rem"><?= e($tile['value']) ?></div>
+                            <div class="fw-semibold" style="font-size:1.05rem; word-break: break-word;"><?= e($tile['value']) ?></div>
                         </div>
                         <span class="stat-icon <?= e($tile['tone']) ?>"><i class="bi bi-<?= e($tile['icon']) ?>"></i></span>
                     </div></div>

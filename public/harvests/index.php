@@ -114,9 +114,9 @@ require __DIR__ . '/../partials/header.php';
                         <th><?= sort_link('Farm', 'farm', $sort, $dir) ?></th>
                         <th><?= sort_link('Crop', 'crop', $sort, $dir) ?></th>
                         <th><?= sort_link('Grade', 'grade', $sort, $dir) ?></th>
-                        <th>Remark</th>
+                        <th><?= sort_link('Remark', 'remark', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Quantity', 'qty', $sort, $dir) ?></th>
-                        <th class="text-end">Price / kg</th>
+                        <th class="text-end"><?= sort_link('Price / kg', 'price', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Value', 'value', $sort, $dir) ?></th>
                         <th class="text-end no-print">Actions</th>
                     </tr>

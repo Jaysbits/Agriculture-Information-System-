@@ -63,7 +63,7 @@ final class Farmer
     }
 
     /** Sort keys accepted by the index page. */
-    public const SORTABLE = ['name', 'address', 'registered', 'farms'];
+    public const SORTABLE = ['name', 'address', 'registered', 'farms', 'total_area'];
 
     /** Farmer list for dropdowns. */
     public function options(): array
@@ -102,8 +102,10 @@ final class Farmer
             'address'    => 'f.address',
             'registered' => 'f.date_registered',
             'farms'      => 'farm_count',
+            'total_area' => 'total_area',
         ];
-        $orderSql = ($orderMap[$sort] ?? $orderMap['name']) . ' ' . strtoupper($dir) . ', f.farmer_id DESC';
+        $orderCols = implode(', ', array_map(static fn ($c) => trim($c) . ' ' . strtoupper($dir), explode(',', $orderMap[$sort] ?? $orderMap['name'])));
+$orderSql  = $orderCols . ', f.farmer_id DESC';
 
         return $this->paginateQuery(
             'SELECT COUNT(*) FROM farmer f' . $whereSql,

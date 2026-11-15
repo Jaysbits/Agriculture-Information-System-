@@ -62,7 +62,7 @@ final class Planting
         return ['rows' => $rows, 'pager' => $pager];
     }
 
-    public const SORTABLE = ['date', 'farm', 'crop', 'status', 'area', 'expected'];
+    public const SORTABLE = ['date', 'farm', 'crop', 'status', 'area', 'expected', 'harvested'];
 
     /** Planting detail row from the reporting view. */
     public function detail(int $id): ?array
@@ -152,9 +152,11 @@ final class Planting
             'crop'     => 'v.crop_name',
             'status'   => 'v.status_name',
             'area'     => 'v.area_planted',
-            'expected' => 'v.expected_harvest_date',
+            'expected'   => 'v.expected_harvest_date',
+            'harvested'  => 'harvested',
         ];
-        $orderSql = ($orderMap[$sort] ?? $orderMap['date']) . ' ' . strtoupper($dir) . ', v.planting_id DESC';
+        $orderCols = implode(', ', array_map(static fn ($c) => trim($c) . ' ' . strtoupper($dir), explode(',', $orderMap[$sort] ?? $orderMap['date'])));
+        $orderSql  = $orderCols . ', v.planting_id DESC';
 
         return $this->paginateQuery(
             'SELECT COUNT(*) FROM v_planting_detail v' . $whereSql,

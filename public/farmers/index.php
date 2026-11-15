@@ -66,7 +66,7 @@ require __DIR__ . '/../partials/header.php';
                         <th><?= sort_link('Address', 'address', $sort, $dir) ?></th>
                         <th><?= sort_link('Registered', 'registered', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Farms', 'farms', $sort, $dir) ?></th>
-                        <th class="text-end">Total area</th>
+                        <th class="text-end"><?= sort_link('Total area', 'total_area', $sort, $dir) ?></th>
                         <th class="text-end no-print">Actions</th>
                     </tr>
                 </thead>

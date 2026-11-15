@@ -52,7 +52,7 @@ final class Crop
         return count($this->db->select('crop', 'crop_id', $filters));
     }
 
-    public const SORTABLE = ['name', 'category', 'season', 'period', 'plantings'];
+    public const SORTABLE = ['name', 'category', 'season', 'period', 'plantings', 'harvested'];
 
     /** Free-text search over name/variety, with optional category/season. */
     public function search(string $term, int $categoryId = 0, int $seasonId = 0): array
@@ -147,9 +147,11 @@ final class Crop
             'season'    => 's.season_name, c.crop_name',
             'period'    => 'c.growing_period_days',
             'plantings' => 'planting_count',
+            'harvested' => 'harvested',
         ];
         $direction = strtolower($dir) === 'desc' ? 'DESC' : 'ASC';
-        $orderSql  = ($orderMap[$sort] ?? $orderMap['name']) . ' ' . $direction . ', c.crop_id DESC';
+        $orderCols = implode(', ', array_map(static fn ($c) => trim($c) . ' ' . $direction, explode(',', $orderMap[$sort] ?? $orderMap['name'])));
+        $orderSql  = $orderCols . ', c.crop_id DESC';
 
         $total = Database::count('SELECT COUNT(*) FROM crop c' . $whereSql, $params);
         $pager = paginate($total, $page);

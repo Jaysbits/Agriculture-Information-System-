@@ -73,7 +73,7 @@ require __DIR__ . '/../partials/header.php';
                         <th><?= sort_link('Season', 'season', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Growing period', 'period', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Plantings', 'plantings', $sort, $dir) ?></th>
-                        <th class="text-end">Harvested</th>
+                        <th class="text-end"><?= sort_link('Harvested', 'harvested', $sort, $dir) ?></th>
                         <th class="text-end no-print">Actions</th>
                     </tr>
                 </thead>

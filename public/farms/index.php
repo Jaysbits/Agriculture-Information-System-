@@ -71,7 +71,7 @@ require __DIR__ . '/../partials/header.php';
                     <tr>
                         <th><?= sort_link('Farm', 'name', $sort, $dir) ?></th>
                         <th><?= sort_link('Farmer', 'farmer', $sort, $dir) ?></th>
-                        <th>Soil</th>
+                        <th><?= sort_link('Soil', 'soil', $sort, $dir) ?></th>
                         <th><?= sort_link('Irrigation', 'irrigation', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Area', 'area', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Plantings', 'plantings', $sort, $dir) ?></th>

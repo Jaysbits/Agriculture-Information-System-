@@ -92,7 +92,7 @@ require __DIR__ . '/../partials/header.php';
                         <th><?= sort_link('Expected harvest', 'expected', $sort, $dir) ?></th>
                         <th><?= sort_link('Status', 'status', $sort, $dir) ?></th>
                         <th class="text-end"><?= sort_link('Area', 'area', $sort, $dir) ?></th>
-                        <th class="text-end">Harvested</th>
+                        <th class="text-end"><?= sort_link('Harvested', 'harvested', $sort, $dir) ?></th>
                         <th class="text-end no-print">Actions</th>
                     </tr>
                 </thead>

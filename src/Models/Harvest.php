@@ -63,7 +63,7 @@ final class Harvest
         return ['rows' => $rows, 'pager' => $pager];
     }
 
-    public const SORTABLE = ['date', 'farm', 'crop', 'grade', 'qty', 'value'];
+    public const SORTABLE = ['date', 'farm', 'crop', 'grade', 'qty', 'value', 'remark', 'price'];
 
     /** Harvest detail row from the reporting view. */
     public function detail(int $id): ?array
@@ -150,9 +150,12 @@ final class Harvest
             'crop'  => 'v.crop_name',
             'grade' => 'v.grade_name',
             'qty'   => 'v.quantity_kg',
-            'value' => 'estimated_value',
+            'value'  => 'estimated_value',
+            'remark' => 'v.remark_description',
+            'price'  => 'v.selling_price_per_kg',
         ];
-        $orderSql = ($orderMap[$sort] ?? $orderMap['date']) . ' ' . strtoupper($dir) . ', v.harvest_id DESC';
+        $orderCols = implode(', ', array_map(static fn ($c) => trim($c) . ' ' . strtoupper($dir), explode(',', $orderMap[$sort] ?? $orderMap['date'])));
+        $orderSql  = $orderCols . ', v.harvest_id DESC';
 
         $result = $this->paginateQuery(
             "SELECT COUNT(*) FROM v_harvest_detail v {$whereSql}",

@@ -62,7 +62,7 @@ final class Farm
         return ['rows' => $rows, 'pager' => $pager];
     }
 
-    public const SORTABLE = ['name', 'farmer', 'area', 'irrigation', 'plantings'];
+    public const SORTABLE = ['name', 'farmer', 'area', 'irrigation', 'plantings', 'soil'];
 
     /** Farm detail row with related descriptions (detail page hero). */
     public function detail(int $id): ?array
@@ -141,6 +141,7 @@ final class Farm
             'area'       => 'fm.area_hectares',
             'irrigation' => 'it.irrigation_name',
             'plantings'  => 'planting_count',
+            'soil'       => 'st.soil_type_name',
         ];
         $orderCols = implode(', ', array_map(static fn ($c) => trim($c) . ' ' . strtoupper($dir), explode(',', $orderMap[$sort] ?? $orderMap['name'])));
 $orderSql  = $orderCols . ', fm.farm_id DESC';
